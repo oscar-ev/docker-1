@@ -1,741 +1,696 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Docker via PowerShell — Atividades Práticas</title>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<title>Docker via PowerShell</title>
+<meta name="robots" content="noindex">
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;0,600;1,400&family=Source+Sans+3:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
+  /* Layout: apostila didática de 3 atividades progressivas — capa, conceitos, atividades em folhas, checklist. Claro, azul institucional como único destaque. */
   :root {
-    --bg:       #0d1117;
-    --surface:  #161b22;
-    --border:   #21262d;
-    --card:     #1c2128;
-    --text:     #e6edf3;
-    --muted:    #7d8590;
-    --accent1:  #58a6ff;   /* azul docker */
-    --accent2:  #3fb950;   /* verde ok */
-    --accent3:  #f78166;   /* vermelho alerta */
-    --accent4:  #d2a8ff;   /* lilás destaque */
-    --yellow:   #e3b341;
-    --tag-bg:   #21262d;
-    --prompt:   #58a6ff;
+    --paper: #faf9f6;
+    --paper-2: #ffffff;
+    --ink: #1c2431;
+    --ink-soft: #46505f;
+    --ink-faint: #727c8a;
+    --line: #e2ded5;
+    --line-strong: #cfcabf;
+    --blue: #1f4e79;
+    --blue-soft: #e8eef5;
+    --blue-mid: #3a6ea5;
+    --red: #9e2a2b;
+    --red-soft: #f6e9e9;
+    --amber: #8a6d1d;
+    --amber-soft: #f6efdc;
+    --green: #2f6b3d;
+    --green-soft: #e6f0e7;
+    --code-bg: #f3f1ec;
+    --code-ink: #2b3340;
+    --kw: #1f4e79;
+    --flag: #8a6d1d;
+    --val: #9e2a2b;
+    --sub: #2f6b3d;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #15181d; --paper-2: #1b1f26; --ink: #e7e9ec; --ink-soft: #b4bbc6; --ink-faint: #8a93a1;
+      --line: #2d323b; --line-strong: #3a414c; --blue: #7aa7d6; --blue-soft: #1c2a3a; --blue-mid: #6b9bd0;
+      --red: #e08587; --red-soft: #3a2122; --amber: #d8bd79; --amber-soft: #352f1d; --green: #8fc79b; --green-soft: #1f2f23;
+      --code-bg: #12151a; --code-ink: #cdd3dc; --kw: #7aa7d6; --flag: #d8bd79; --val: #e08587; --sub: #8fc79b;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #15181d; --paper-2: #1b1f26; --ink: #e7e9ec; --ink-soft: #b4bbc6; --ink-faint: #8a93a1;
+    --line: #2d323b; --line-strong: #3a414c; --blue: #7aa7d6; --blue-soft: #1c2a3a; --blue-mid: #6b9bd0;
+    --red: #e08587; --red-soft: #3a2122; --amber: #d8bd79; --amber-soft: #352f1d; --green: #8fc79b; --green-soft: #1f2f23;
+    --code-bg: #12151a; --code-ink: #cdd3dc; --kw: #7aa7d6; --flag: #d8bd79; --val: #e08587; --sub: #8fc79b;
+    color-scheme: dark;
   }
 
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  *, *::before, *::after { box-sizing: border-box; }
+  body { background: var(--paper); color: var(--ink); font-family: 'Source Sans 3', system-ui, sans-serif; line-height: 1.65; margin: 0; padding-bottom: 72px; font-size: 16px; }
+  .wrap { max-width: 720px; margin: 0 auto; padding-inline: 24px; }
 
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'Syne', sans-serif;
-    min-height: 100vh;
-    padding: 0 0 80px;
-  }
+  /* ── CAPA ── */
+  .capa { border-bottom: 2px solid var(--blue); padding: 48px 24px 32px; max-width: 720px; margin: 0 auto; }
+  .capa .eyebrow { font-family: 'JetBrains Mono', monospace; font-size: .72rem; letter-spacing: .14em; text-transform: uppercase; color: var(--blue); margin-bottom: 14px; }
+  .capa h1 { font-family: 'Lora', Georgia, serif; font-size: clamp(2rem, 5vw, 2.9rem); font-weight: 600; line-height: 1.12; margin: 0 0 14px; letter-spacing: -.01em; text-wrap: balance; }
+  .capa .lede { font-size: 1.05rem; color: var(--ink-soft); max-width: 54ch; margin: 0 0 22px; }
+  .capa-meta { display: flex; flex-wrap: wrap; gap: 6px 24px; font-size: .88rem; color: var(--ink-faint); border-top: 1px solid var(--line); padding-top: 16px; }
+  .capa-meta b { color: var(--ink-soft); font-weight: 600; }
 
-  /* ── HERO ── */
-  .hero {
-    position: relative;
-    overflow: hidden;
-    padding: 60px 40px 50px;
-    border-bottom: 1px solid var(--border);
-    background: linear-gradient(135deg, #0d1117 0%, #0d2033 60%, #0d1117 100%);
-  }
-  .hero::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: radial-gradient(ellipse 80% 60% at 70% 50%, rgba(88,166,255,.08) 0%, transparent 70%);
-    pointer-events: none;
-  }
-  .hero-grid {
-    position: absolute;
-    inset: 0;
-    background-image:
-      linear-gradient(rgba(88,166,255,.04) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(88,166,255,.04) 1px, transparent 1px);
-    background-size: 40px 40px;
-    pointer-events: none;
-  }
-  .hero-inner { position: relative; max-width: 900px; margin: 0 auto; }
-  .hero-badge {
-    display: inline-flex; align-items: center; gap: 8px;
-    background: rgba(88,166,255,.1); border: 1px solid rgba(88,166,255,.3);
-    color: var(--accent1); font-size: .72rem; font-family: 'JetBrains Mono', monospace;
-    padding: 4px 12px; border-radius: 20px; letter-spacing: .08em; margin-bottom: 18px;
-  }
-  .hero-badge span { width:7px;height:7px;border-radius:50%;background:var(--accent1);
-    animation: pulse 1.8s ease-in-out infinite; display:inline-block; }
-  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(.7)} }
+  /* ── CALLOUTS ── */
+  .callout { border: 1px solid var(--line); border-left: 4px solid var(--ink-faint); border-radius: 4px; padding: 14px 18px; margin: 22px auto 0; max-width: 720px; font-size: .95rem; line-height: 1.6; }
+  .callout h3 { font-size: .72rem; letter-spacing: .06em; text-transform: uppercase; font-family: 'JetBrains Mono', monospace; margin: 0 0 6px; }
+  .callout.rule { background: var(--blue-soft); border-left-color: var(--blue); } .callout.rule h3 { color: var(--blue); }
+  .callout.tip { background: var(--amber-soft); border-left-color: var(--amber); } .callout.tip h3 { color: var(--amber); }
+  .callout.ok { background: var(--green-soft); border-left-color: var(--green); } .callout.ok h3 { color: var(--green); }
+  .callout.warn { background: var(--red-soft); border-left-color: var(--red); } .callout.warn h3 { color: var(--red); }
+  .callout code { font-family: 'JetBrains Mono', monospace; background: rgba(0,0,0,.05); border: 1px solid var(--line-strong); padding: 0 5px; border-radius: 3px; font-size: .85em; }
+  .callout .bad { color: var(--red); font-weight: 700; } .callout .good { color: var(--green); font-weight: 700; }
 
-  .hero h1 {
-    font-size: clamp(2rem, 5vw, 3.4rem);
-    font-weight: 800;
-    line-height: 1.1;
-    letter-spacing: -.02em;
-    margin-bottom: 14px;
-  }
-  .hero h1 em { font-style: normal; color: var(--accent1); }
-  .hero p { color: var(--muted); font-size: 1.05rem; max-width: 560px; line-height: 1.6; }
+  /* ── BLOCOS DE TÍTULO ── */
+  .block-head { font-family: 'Lora', Georgia, serif; font-size: 1.4rem; font-weight: 600; margin: 40px 0 4px; }
+  .block-sub { color: var(--ink-faint); font-size: .92rem; margin: 0 0 18px; }
 
-  .hero-meta {
-    display: flex; gap: 24px; flex-wrap: wrap; margin-top: 28px;
-  }
-  .meta-chip {
-    display: flex; align-items: center; gap: 8px;
-    background: var(--surface); border: 1px solid var(--border);
-    padding: 8px 16px; border-radius: 8px; font-size: .82rem;
-  }
-  .meta-chip .icon { font-size: 1rem; }
-  .meta-chip strong { color: var(--text); font-weight:600; }
-  .meta-chip span { color: var(--muted); }
+  /* ── CONCEITOS ── */
+  .concept-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+  @media(max-width: 540px) { .concept-grid { grid-template-columns: 1fr; } }
+  .concept { background: var(--paper-2); padding: 16px 18px; }
+  .concept .ct { display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px; }
+  .concept .ci { font-size: 1.05rem; }
+  .concept .cn { font-weight: 700; font-size: 1rem; }
+  .concept .cd { font-size: .88rem; color: var(--ink-soft); line-height: 1.55; }
+  .concept .cd b { color: var(--ink); font-weight: 600; }
 
-  /* ── LAYOUT ── */
-  .container { max-width: 900px; margin: 0 auto; padding: 0 24px; }
+  /* ── ATIVIDADE (folha) ── */
+  .atividade { border: 1px solid var(--line-strong); border-radius: 8px; overflow: hidden; background: var(--paper-2); margin-top: 28px; }
+  .ativ-hdr { padding: 20px 22px; border-bottom: 1px solid var(--line); display: flex; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
+  .ativ-badge { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: .95rem; color: var(--paper-2); background: var(--blue); padding: 4px 11px; border-radius: 4px; flex-shrink: 0; margin-top: 2px; }
+  :root[data-theme="dark"] .ativ-badge, :root:not([data-theme="light"]) .ativ-badge { color: var(--paper); }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .ativ-badge { color: #0f1216; } }
+  .ativ-info { flex: 1; min-width: 200px; }
+  .ativ-info h2 { font-family: 'Lora', Georgia, serif; font-size: 1.25rem; font-weight: 600; margin: 0 0 5px; }
+  .ativ-info p { color: var(--ink-soft); font-size: .92rem; margin: 0; line-height: 1.5; }
+  .ativ-time { font-family: 'JetBrains Mono', monospace; font-size: .74rem; color: var(--ink-faint); white-space: nowrap; align-self: center; }
+  .ativ-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+  .ativ-tags .tag { font-family: 'JetBrains Mono', monospace; font-size: .66rem; padding: 2px 8px; border-radius: 3px; border: 1px solid var(--line-strong); color: var(--ink-faint); }
+  .ativ-body { padding: 22px; }
 
-  /* ── ACTIVITY CARD ── */
-  .activity {
-    margin-top: 48px;
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    overflow: hidden;
-    background: var(--card);
-    transition: border-color .2s;
-  }
-  .activity:hover { border-color: rgba(88,166,255,.35); }
+  /* ── OBJETIVO ── */
+  .objetivo { background: var(--blue-soft); border-radius: 4px; padding: 12px 16px; font-size: .92rem; color: var(--ink); margin: 0 0 24px; line-height: 1.55; }
+  .objetivo .lab { display: block; font-family: 'JetBrains Mono', monospace; font-size: .66rem; letter-spacing: .08em; text-transform: uppercase; color: var(--blue); margin-bottom: 4px; }
 
-  .activity-header {
-    padding: 24px 28px 20px;
-    border-bottom: 1px solid var(--border);
-    background: var(--surface);
-    display: flex; align-items: flex-start; gap: 18px; flex-wrap: wrap;
-  }
-  .act-number {
-    width: 44px; height: 44px; border-radius: 10px; flex-shrink: 0;
-    display: flex; align-items: center; justify-content: center;
-    font-family: 'JetBrains Mono', monospace; font-size: 1.1rem; font-weight: 700;
-  }
-  .act-number.n1 { background: rgba(88,166,255,.15); color: var(--accent1); border: 1px solid rgba(88,166,255,.3); }
-  .act-number.n2 { background: rgba(63,185,80,.15); color: var(--accent2); border: 1px solid rgba(63,185,80,.3); }
-  .act-number.n3 { background: rgba(210,168,255,.15); color: var(--accent4); border: 1px solid rgba(210,168,255,.3); }
+  /* ── PASSO ── */
+  .passo { margin-bottom: 26px; }
+  .passo-hdr { display: flex; align-items: baseline; gap: 9px; margin-bottom: 10px; flex-wrap: wrap; }
+  .passo-num { font-family: 'JetBrains Mono', monospace; font-size: .74rem; font-weight: 700; color: var(--blue); flex-shrink: 0; }
+  .passo-titulo { font-weight: 600; font-size: 1.02rem; }
 
-  .act-info { flex: 1; min-width: 200px; }
-  .act-info h2 { font-size: 1.25rem; font-weight: 700; margin-bottom: 6px; }
-  .act-info p { color: var(--muted); font-size: .9rem; line-height: 1.55; }
+  /* ── ETIQUETA ONDE RODAR ── */
+  .onde { display: inline-flex; align-items: center; gap: 6px; font-family: 'JetBrains Mono', monospace; font-size: .66rem; letter-spacing: .03em; padding: 3px 10px; border-radius: 3px; margin-bottom: 8px; border: 1px solid; }
+  .onde.ps { color: var(--blue); border-color: var(--blue); background: var(--blue-soft); }
+  .onde.linux { color: var(--green); border-color: var(--green); background: var(--green-soft); }
 
-  .act-tags { display:flex; flex-wrap:wrap; gap:6px; margin-top: 12px; }
-  .tag {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: .68rem; padding: 3px 10px; border-radius: 4px;
-    background: var(--tag-bg); border: 1px solid var(--border); color: var(--muted);
-    letter-spacing: .04em;
-  }
-  .tag.blue  { background: rgba(88,166,255,.1);  border-color: rgba(88,166,255,.25);  color: var(--accent1); }
-  .tag.green { background: rgba(63,185,80,.1);   border-color: rgba(63,185,80,.25);   color: var(--accent2); }
-  .tag.lilac { background: rgba(210,168,255,.1); border-color: rgba(210,168,255,.25); color: var(--accent4); }
-  .tag.red   { background: rgba(247,129,102,.1); border-color: rgba(247,129,102,.25); color: var(--accent3); }
-  .tag.yellow{ background: rgba(227,179,65,.1);  border-color: rgba(227,179,65,.25);  color: var(--yellow); }
+  /* ── BLOCO DE CÓDIGO ── */
+  .cmd { background: var(--code-bg); border: 1px solid var(--line-strong); border-radius: 5px; overflow: hidden; margin-bottom: 8px; }
+  .cmd + .cmd { margin-top: 8px; }
+  .cmd-bar { display: flex; align-items: center; padding: 6px 12px; border-bottom: 1px solid var(--line); font-family: 'JetBrains Mono', monospace; font-size: .64rem; letter-spacing: .05em; color: var(--ink-faint); background: rgba(0,0,0,.015); }
+  .cmd-bar .where { font-weight: 600; }
+  .cmd-bar .where.ps { color: var(--blue); }
+  .cmd-bar .where.linux { color: var(--green); }
+  .cmd-body { padding: 12px 14px; overflow-x: auto; }
+  .cmd-line { display: flex; align-items: flex-start; gap: 8px; font-family: 'JetBrains Mono', monospace; font-size: .82rem; position: relative; padding-right: 72px; }
+  .prompt { user-select: none; flex-shrink: 0; }
+  .prompt.ps { color: var(--blue-mid); }
+  .prompt.linux { color: var(--green); }
+  .code { color: var(--code-ink); line-height: 1.5; min-width: 0; white-space: pre-wrap; word-break: break-word; }
+  .code .ck { color: var(--kw); font-weight: 600; }
+  .code .cs { color: var(--sub); }
+  .code .cf { color: var(--flag); }
+  .code .cv { color: var(--val); }
+  .code .ci { color: var(--amber); }
+  .cmd-out { font-family: 'JetBrains Mono', monospace; font-size: .74rem; color: var(--ink-faint); line-height: 1.5; padding: 2px 14px 0; white-space: pre-wrap; }
+  .cmd-out.good { color: var(--green); }
+  .cmd-out:last-child { padding-bottom: 12px; }
+  .cmd-body + .cmd-out { padding-bottom: 12px; }
 
-  .time-badge {
-    display: inline-flex; align-items: center; gap: 6px;
-    font-family: 'JetBrains Mono', monospace; font-size: .75rem;
-    padding: 6px 14px; border-radius: 20px; white-space: nowrap;
-    align-self: flex-start; margin-top: 4px;
-  }
-  .time-badge.t1 { background: rgba(88,166,255,.12);  color: var(--accent1); border: 1px solid rgba(88,166,255,.25); }
-  .time-badge.t2 { background: rgba(63,185,80,.12);   color: var(--accent2); border: 1px solid rgba(63,185,80,.25); }
-  .time-badge.t3 { background: rgba(210,168,255,.12); color: var(--accent4); border: 1px solid rgba(210,168,255,.25); }
+  /* ── BOTÃO COPIAR ── */
+  .copy-btn { position: absolute; top: -3px; right: 0; display: inline-flex; align-items: center; gap: 5px; background: var(--paper-2); border: 1px solid var(--line-strong); color: var(--ink-faint); font-family: 'JetBrains Mono', monospace; font-size: .62rem; letter-spacing: .03em; padding: 3px 8px; border-radius: 4px; cursor: pointer; transition: all .15s ease; user-select: none; white-space: nowrap; }
+  .copy-btn:hover { border-color: var(--blue); color: var(--blue); }
+  .copy-btn:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+  .copy-btn.copied { border-color: var(--green); color: var(--green); }
+  .copy-btn svg { width: 11px; height: 11px; }
 
-  /* ── BODY ── */
-  .activity-body { padding: 28px; }
+  /* ── NOTA ── */
+  .nota { font-size: .9rem; color: var(--ink-soft); line-height: 1.6; margin-top: 4px; padding-left: 14px; border-left: 2px solid var(--line-strong); }
+  .nota code, .mono { font-family: 'JetBrains Mono', monospace; font-size: .9em; }
+  .nota .fg { color: var(--blue); font-weight: 600; font-family: 'JetBrains Mono', monospace; font-size: .9em; }
+  .nota .et { color: var(--ink); font-weight: 600; }
 
-  /* ── OBJECTIVE BOX ── */
-  .objective-box {
-    background: rgba(88,166,255,.06); border: 1px solid rgba(88,166,255,.2);
-    border-left: 3px solid var(--accent1);
-    border-radius: 8px; padding: 14px 18px; margin-bottom: 28px;
-    font-size: .88rem; line-height: 1.6; color: #c9d1d9;
-  }
-  .objective-box strong { color: var(--accent1); display: block; margin-bottom: 4px; font-size: .75rem;
-    letter-spacing: .08em; font-family: 'JetBrains Mono', monospace; }
+  hr.rule { border: none; border-top: 1px solid var(--line); margin: 20px 0; }
 
-  /* ── STEP ── */
-  .step { margin-bottom: 32px; }
-  .step-label {
-    display: flex; align-items: center; gap: 10px; margin-bottom: 10px;
-  }
-  .step-num {
-    width: 24px; height: 24px; border-radius: 50%; flex-shrink: 0;
-    display: flex; align-items: center; justify-content: center;
-    font-size: .7rem; font-weight: 700; font-family: 'JetBrains Mono', monospace;
-    background: var(--tag-bg); border: 1px solid var(--border); color: var(--muted);
-  }
-  .step-title { font-weight: 600; font-size: .95rem; }
-
-  /* ── TERMINAL ── */
-  .terminal {
-    background: #010409;
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    overflow: hidden;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: .82rem;
-    margin-bottom: 10px;
-  }
-  .terminal-bar {
-    background: #161b22; border-bottom: 1px solid var(--border);
-    padding: 8px 14px;
-    display: flex; align-items: center; gap: 10px;
-  }
-  .dots { display: flex; gap: 6px; }
-  .dot { width:10px;height:10px;border-radius:50%; }
-  .dot.r { background:#ff5f57; } .dot.y { background:#febc2e; } .dot.g { background:#28c840; }
-  .terminal-bar span { color: var(--muted); font-size: .7rem; flex:1; text-align:center; }
-  .terminal-body { padding: 18px 20px; display: flex; flex-direction: column; gap: 14px; }
-
-  .cmd-block { display: flex; flex-direction: column; gap: 4px; }
-  .cmd-line { display: flex; align-items: flex-start; gap: 8px; }
-  .prompt-str { color: var(--prompt); user-select: none; flex-shrink: 0; padding-top: 1px; }
-  .cmd { color: #e6edf3; line-height: 1.5; word-break: break-all; }
-  .cmd .kw  { color: #79c0ff; }  /* docker / powershell keyword */
-  .cmd .sub { color: var(--accent2); }  /* subcommand */
-  .cmd .flag { color: var(--yellow); }  /* flags -p -d -v */
-  .cmd .val  { color: #a5d6ff; }  /* values/strings */
-  .cmd .comment { color: #4d5966; font-style: italic; }
-
-  .cmd-desc {
-    color: var(--muted); font-size: .78rem; line-height: 1.5;
-    padding: 8px 12px;
-    background: rgba(255,255,255,.03); border-radius: 6px; border-left: 2px solid var(--border);
-    margin-top: 4px;
-  }
-  .cmd-desc .hi { color: var(--text); font-weight: 600; }
-
-  /* output lines */
-  .output { color: #4d5966; font-size: .78rem; line-height: 1.5; padding-left: 4px; }
-  .output.ok  { color: #3fb950; }
-  .output.info{ color: #58a6ff; }
-
-  /* ── TIP BOX ── */
-  .tip {
-    background: rgba(227,179,65,.06); border: 1px solid rgba(227,179,65,.2);
-    border-left: 3px solid var(--yellow);
-    border-radius: 8px; padding: 12px 16px; margin-top: 14px;
-    font-size: .82rem; color: #c9d1d9; line-height: 1.55;
-  }
-  .tip strong { color: var(--yellow); font-family: 'JetBrains Mono', monospace;
-    font-size: .72rem; letter-spacing: .06em; display: block; margin-bottom: 3px; }
-
-  .warn {
-    background: rgba(247,129,102,.06); border: 1px solid rgba(247,129,102,.2);
-    border-left: 3px solid var(--accent3);
-    border-radius: 8px; padding: 12px 16px; margin-top: 14px;
-    font-size: .82rem; color: #c9d1d9; line-height: 1.55;
-  }
-  .warn strong { color: var(--accent3); font-family: 'JetBrains Mono', monospace;
-    font-size: .72rem; letter-spacing: .06em; display: block; margin-bottom: 3px; }
-
-  /* ── DIVIDER ── */
-  .divider { border: none; border-top: 1px solid var(--border); margin: 28px 0; }
+  /* ── HTML snippet (para criar no editor) ── */
+  .snippet { background: var(--code-bg); border: 1px solid var(--line-strong); border-radius: 5px; overflow: hidden; margin: 8px 0; }
+  .snippet .snip-bar { display:flex; align-items:center; justify-content:space-between; padding: 6px 12px; border-bottom: 1px solid var(--line); font-family:'JetBrains Mono',monospace; font-size:.64rem; color: var(--ink-faint); background: rgba(0,0,0,.015); }
+  .snippet pre { margin: 0; padding: 12px 14px; overflow-x: auto; font-family: 'JetBrains Mono', monospace; font-size: .78rem; line-height: 1.55; color: var(--code-ink); }
+  .snip-copy { border:1px solid var(--line-strong); background: var(--paper-2); color: var(--ink-faint); font-family:'JetBrains Mono',monospace; font-size:.62rem; padding:3px 8px; border-radius:4px; cursor:pointer; display:inline-flex; align-items:center; gap:5px; }
+  .snip-copy:hover { border-color: var(--blue); color: var(--blue); }
+  .snip-copy.copied { border-color: var(--green); color: var(--green); }
+  .snip-copy svg { width:11px;height:11px; }
 
   /* ── CHECKLIST ── */
-  .checklist { list-style: none; display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
-  .checklist li {
-    display: flex; align-items: flex-start; gap: 10px;
-    font-size: .88rem; color: var(--muted); line-height: 1.5;
-  }
-  .checklist li::before {
-    content: '□'; color: var(--border); font-size: 1rem; flex-shrink: 0; margin-top: -1px;
-  }
-  .checklist li span { color: var(--text); }
+  .checklist { list-style: none; display: flex; flex-direction: column; gap: 9px; margin: 12px 0 0; padding: 0; }
+  .checklist li { display: flex; align-items: flex-start; gap: 10px; font-size: .92rem; color: var(--ink-soft); line-height: 1.5; }
+  .checklist .cbox { width: 16px; height: 16px; border: 1.5px solid var(--line-strong); border-radius: 3px; flex-shrink: 0; margin-top: 3px; }
+  .check-label { font-family: 'JetBrains Mono', monospace; font-size: .72rem; letter-spacing: .05em; text-transform: uppercase; color: var(--ink-faint); margin: 20px 0 0; }
+
+  /* ── TABELA (resgate) ── */
+  .tbl-wrap { overflow-x: auto; margin-top: 10px; }
+  table.tbl { width: 100%; border-collapse: collapse; font-size: .86rem; min-width: 460px; }
+  table.tbl th { text-align: left; padding: 8px 12px; border-bottom: 2px solid var(--line-strong); font-size: .74rem; letter-spacing: .04em; text-transform: uppercase; color: var(--blue); font-weight: 700; }
+  table.tbl td { padding: 7px 12px; border-bottom: 1px solid var(--line); color: var(--ink-soft); vertical-align: top; }
+  table.tbl td:first-child { font-family: 'JetBrains Mono', monospace; color: var(--ink); font-weight: 600; }
 
   /* ── FOOTER ── */
-  .footer {
-    margin-top: 60px; text-align: center;
-    font-family: 'JetBrains Mono', monospace; font-size: .75rem; color: #3d444d;
-    border-top: 1px solid var(--border); padding-top: 32px;
-  }
-  .footer span { color: var(--accent1); }
-
-  @media(max-width:600px){
-    .hero{ padding: 40px 20px 36px; }
-    .activity-body, .activity-header{ padding: 18px; }
-    .terminal-body{ padding: 14px; }
-  }
+  .footer { margin-top: 52px; padding-top: 22px; text-align: center; border-top: 1px solid var(--line); font-family: 'JetBrains Mono', monospace; font-size: .72rem; color: var(--ink-faint); line-height: 1.7; }
+  .footer b { color: var(--ink-soft); }
 </style>
-</head>
-<body>
 
-<!-- ═══════════════════  HERO  ═══════════════════ -->
-<div class="hero">
-  <div class="hero-grid"></div>
-  <div class="hero-inner">
-    <div class="hero-badge"><span></span> PowerShell · Docker · Prática</div>
-    <h1>Docker via <em>PowerShell</em></h1>
-    <p>Três atividades práticas, progressivas e comentadas para dominar containers do zero até subir um servidor web real.</p>
-    <div class="hero-meta">
-      <div class="meta-chip"><span class="icon">🐳</span><strong>Docker Desktop</strong><span>pré-requisito</span></div>
-      <div class="meta-chip"><span class="icon">💻</span><strong>PowerShell</strong><span>Windows / macOS / Linux</span></div>
-      <div class="meta-chip"><span class="icon">📚</span><strong>3 atividades</strong><span>do básico ao servidor web</span></div>
-    </div>
+<!-- ═══ CAPA ═══ -->
+<header class="capa">
+  <div class="eyebrow">UMC · Laboratório de Containers · ADS / Eng. de Software</div>
+  <h1>Docker via PowerShell</h1>
+  <p class="lede">Três atividades práticas e progressivas: dos comandos essenciais do Docker até subir um servidor web de verdade, acessível no navegador.</p>
+  <div class="capa-meta">
+    <span>Pré-requisito: <b>Docker Desktop</b></span>
+    <span>Terminal: <b>PowerShell (Windows)</b></span>
+    <span>Duração total: <b>~110 min</b></span>
+  </div>
+</header>
+
+<!-- ═══ REGRA POWERSHELL ═══ -->
+<div class="callout rule">
+  <h3>Regra de ouro — um comando por vez</h3>
+  O PowerShell dos laboratórios da UMC <b>não aceita dois comandos na mesma linha</b>. Cada bloco de código abaixo é <span class="good">um único comando</span>: rode <span class="good">um de cada vez</span> (use o botão <b>copiar</b>), aperte <code>Enter</code> e espere terminar. Nunca junte comandos com <code>&amp;&amp;</code>, <code>|</code> ou <code>;</code> — se aparecer <span class="bad">erro de sintaxe</span>, foi mais de uma linha colada junta.
+</div>
+
+<main class="wrap">
+
+<!-- ═══ CONCEITOS ═══ -->
+<h2 class="block-head">Quatro conceitos antes de começar</h2>
+<p class="block-sub">Entender estas quatro ideias faz todo o resto encaixar.</p>
+<div class="concept-grid">
+  <div class="concept">
+    <div class="ct"><span class="ci">📦</span><span class="cn">Imagem</span></div>
+    <div class="cd">Um <b>molde congelado</b>, pronto para uso (ex: <span class="mono">nginx</span>, <span class="mono">ubuntu</span>). É o que você <b>baixa</b> do Docker Hub. Não roda sozinha — serve de base.</div>
+  </div>
+  <div class="concept">
+    <div class="ct"><span class="ci">🐳</span><span class="cn">Container</span></div>
+    <div class="cd">Uma <b>cópia viva de uma imagem</b>, em execução. É o "mini-computador" isolado onde as coisas acontecem. De uma imagem você cria quantos containers quiser.</div>
+  </div>
+  <div class="concept">
+    <div class="ct"><span class="ci">🔌</span><span class="cn">Porta (-p)</span></div>
+    <div class="cd">Uma <b>ponte</b> entre o seu PC e o container. <span class="mono">-p 8080:80</span> liga a porta 8080 do seu PC à porta 80 interna — é assim que o navegador alcança o site de dentro.</div>
+  </div>
+  <div class="concept">
+    <div class="ct"><span class="ci">🔗</span><span class="cn">Volume (-v)</span></div>
+    <div class="cd">Uma <b>pasta compartilhada</b> entre o seu PC e o container. O que você edita no Windows aparece na hora dentro do container — sem reiniciar nada.</div>
   </div>
 </div>
 
-<div class="container">
+<div class="callout tip" style="margin-inline:0">
+  <h3>Analogia rápida</h3>
+  <b>Imagem</b> é a receita; <b>container</b> é o prato pronto feito a partir dela. Você baixa a receita uma vez e cozinha quantos pratos quiser.
+</div>
 
-<!-- ═══════════════════  ATIVIDADE 1  ═══════════════════ -->
-<div class="activity">
-  <div class="activity-header">
-    <div class="act-number n1">01</div>
-    <div class="act-info">
-      <h2>Comandos Essenciais do Docker</h2>
-      <p>Aprenda a navegar pelo Docker com os comandos fundamentais: listar imagens, baixar, executar e gerenciar containers.</p>
-      <div class="act-tags">
-        <span class="tag blue">docker pull</span>
-        <span class="tag blue">docker run</span>
-        <span class="tag blue">docker ps</span>
-        <span class="tag blue">docker stop</span>
-        <span class="tag blue">docker rm</span>
-        <span class="tag blue">docker images</span>
-      </div>
-    </div>
-    <div class="time-badge t1">⏱ 30 min</div>
+<!-- ═══ PRÉ ═══ -->
+<h2 class="block-head">Pré-requisito — verificar o Docker</h2>
+<p class="block-sub">Abra o PowerShell (não precisa ser administrador) e rode o comando.</p>
+<div class="passo">
+  <div class="onde ps">🪟 PowerShell — sua máquina</div>
+  <div class="cmd">
+    <div class="cmd-bar"><span class="where ps">PowerShell · Windows</span></div>
+    <div class="cmd-body"><div class="cmd-line"><span class="prompt ps">PS&gt;</span><span class="code"><span class="ck">docker</span> <span class="cs">version</span></span></div></div>
+    <div class="cmd-out">Precisam aparecer as linhas Client e Server com versões.</div>
   </div>
+  <p class="nota">Se der erro de conexão, abra o <span class="et">Docker Desktop</span> e espere o ícone da baleia ficar verde antes de tentar de novo.</p>
+</div>
 
-  <div class="activity-body">
-    <div class="objective-box">
-      <strong>🎯 OBJETIVO</strong>
-      Ao final desta atividade você saberá baixar imagens do Docker Hub, iniciar e parar containers, listar o que está rodando e limpar o ambiente.
-    </div>
-
-    <!-- PASSO 1 -->
-    <div class="step">
-      <div class="step-label"><div class="step-num">1</div><div class="step-title">Verificar a instalação do Docker</div></div>
-      <div class="terminal">
-        <div class="terminal-bar"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><span>PowerShell</span></div>
-        <div class="terminal-body">
-          <div class="cmd-block">
-            <div class="cmd-line"><span class="prompt-str">PS&gt;</span><span class="cmd"><span class="kw">docker</span> <span class="sub">version</span></span></div>
-            <div class="cmd-desc">Exibe a versão do Docker instalada. <span class="hi">Client</span> é o CLI que você usa e <span class="hi">Server</span> é o daemon que gerencia os containers.</div>
-          </div>
-          <div class="cmd-block">
-            <div class="cmd-line"><span class="prompt-str">PS&gt;</span><span class="cmd"><span class="kw">docker</span> <span class="sub">info</span></span></div>
-            <div class="cmd-desc">Mostra estatísticas completas do ambiente: containers em execução, imagens baixadas, drivers de rede e armazenamento.</div>
-          </div>
-        </div>
-      </div>
-      <div class="tip"><strong>💡 DICA</strong>Se aparecer erro de conexão, abra o <strong>Docker Desktop</strong> e aguarde o ícone da baleia ficar verde.</div>
-    </div>
-
-    <!-- PASSO 2 -->
-    <div class="step">
-      <div class="step-label"><div class="step-num">2</div><div class="step-title">Baixar sua primeira imagem (Hello World)</div></div>
-      <div class="terminal">
-        <div class="terminal-bar"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><span>PowerShell</span></div>
-        <div class="terminal-body">
-          <div class="cmd-block">
-            <div class="cmd-line"><span class="prompt-str">PS&gt;</span><span class="cmd"><span class="kw">docker</span> <span class="sub">pull</span> <span class="val">hello-world</span></span></div>
-            <div class="cmd-desc"><span class="hi">pull</span> faz o download da imagem do Docker Hub (repositório público). <span class="hi">hello-world</span> é uma imagem mínima criada para testar o ambiente.</div>
-          </div>
-          <div class="cmd-block">
-            <div class="cmd-line"><span class="prompt-str">PS&gt;</span><span class="cmd"><span class="kw">docker</span> <span class="sub">images</span></span></div>
-            <div class="cmd-desc">Lista todas as imagens baixadas localmente. Você verá <span class="hi">REPOSITORY</span>, <span class="hi">TAG</span> (versão), <span class="hi">IMAGE ID</span> e <span class="hi">SIZE</span>.</div>
-          </div>
-        </div>
+<!-- ═══════ ATIVIDADE 1 ═══════ -->
+<div class="atividade">
+  <div class="ativ-hdr">
+    <span class="ativ-badge">01</span>
+    <div class="ativ-info">
+      <h2>Comandos essenciais do Docker</h2>
+      <p>Baixar imagens, iniciar e parar containers, listar o que está rodando e limpar o ambiente.</p>
+      <div class="ativ-tags">
+        <span class="tag">docker pull</span><span class="tag">docker run</span><span class="tag">docker ps</span><span class="tag">docker stop</span><span class="tag">docker rm</span><span class="tag">docker images</span>
       </div>
     </div>
+    <span class="ativ-time">~30 min</span>
+  </div>
+  <div class="ativ-body">
+    <div class="objetivo"><span class="lab">Objetivo</span>Ao final você saberá baixar imagens do Docker Hub, iniciar e parar containers, ver o que está rodando e limpar tudo.</div>
 
-    <!-- PASSO 3 -->
-    <div class="step">
-      <div class="step-label"><div class="step-num">3</div><div class="step-title">Executar o container Hello World</div></div>
-      <div class="terminal">
-        <div class="terminal-bar"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><span>PowerShell</span></div>
-        <div class="terminal-body">
-          <div class="cmd-block">
-            <div class="cmd-line"><span class="prompt-str">PS&gt;</span><span class="cmd"><span class="kw">docker</span> <span class="sub">run</span> <span class="val">hello-world</span></span></div>
-            <div class="cmd-desc"><span class="hi">run</span> cria e inicia um container a partir da imagem. O hello-world imprime uma mensagem de boas-vindas e encerra automaticamente.</div>
-          </div>
-          <div class="output ok">Hello from Docker!</div>
-          <div class="output">This message shows that your installation appears to be working correctly.</div>
-        </div>
+    <div class="passo">
+      <div class="passo-hdr"><span class="passo-num">1.1</span><span class="passo-titulo">Ver informações do ambiente</span></div>
+      <div class="onde ps">🪟 PowerShell</div>
+      <div class="cmd">
+        <div class="cmd-bar"><span class="where ps">PowerShell · Windows</span></div>
+        <div class="cmd-body"><div class="cmd-line"><span class="prompt ps">PS&gt;</span><span class="code"><span class="ck">docker</span> <span class="cs">info</span></span></div></div>
+      </div>
+      <p class="nota"><span class="fg">docker info</span> mostra o estado do ambiente: quantos containers e imagens existem, drivers de rede e armazenamento. Bom para confirmar que está tudo no ar.</p>
+    </div>
+
+    <div class="passo">
+      <div class="passo-hdr"><span class="passo-num">1.2</span><span class="passo-titulo">Baixar sua primeira imagem</span></div>
+      <div class="onde ps">🪟 PowerShell</div>
+      <div class="cmd">
+        <div class="cmd-bar"><span class="where ps">PowerShell · Windows</span></div>
+        <div class="cmd-body"><div class="cmd-line"><span class="prompt ps">PS&gt;</span><span class="code"><span class="ck">docker</span> <span class="cs">pull</span> <span class="cv">hello-world</span></span></div></div>
+      </div>
+      <p class="nota"><span class="fg">pull</span> baixa a imagem do Docker Hub (repositório público). <span class="et">hello-world</span> é mínima, feita só para testar o ambiente.</p>
+    </div>
+
+    <div class="passo">
+      <div class="passo-hdr"><span class="passo-num">1.3</span><span class="passo-titulo">Listar as imagens baixadas</span></div>
+      <div class="onde ps">🪟 PowerShell</div>
+      <div class="cmd">
+        <div class="cmd-bar"><span class="where ps">PowerShell · Windows</span></div>
+        <div class="cmd-body"><div class="cmd-line"><span class="prompt ps">PS&gt;</span><span class="code"><span class="ck">docker</span> <span class="cs">images</span></span></div></div>
+      </div>
+      <p class="nota">Lista as imagens no seu disco, com <span class="et">REPOSITORY</span>, <span class="et">TAG</span> (versão), <span class="et">IMAGE ID</span> e <span class="et">SIZE</span>.</p>
+    </div>
+
+    <div class="passo">
+      <div class="passo-hdr"><span class="passo-num">1.4</span><span class="passo-titulo">Executar o Hello World</span></div>
+      <div class="onde ps">🪟 PowerShell</div>
+      <div class="cmd">
+        <div class="cmd-bar"><span class="where ps">PowerShell · Windows</span></div>
+        <div class="cmd-body"><div class="cmd-line"><span class="prompt ps">PS&gt;</span><span class="code"><span class="ck">docker</span> <span class="cs">run</span> <span class="cv">hello-world</span></span></div></div>
+        <div class="cmd-out good">Hello from Docker!</div>
+      </div>
+      <p class="nota"><span class="fg">run</span> cria e inicia um container a partir da imagem. O hello-world imprime a mensagem e encerra sozinho.</p>
+    </div>
+
+    <div class="passo">
+      <div class="passo-hdr"><span class="passo-num">1.5</span><span class="passo-titulo">Rodar o nginx em segundo plano</span></div>
+      <div class="onde ps">🪟 PowerShell</div>
+      <div class="cmd">
+        <div class="cmd-bar"><span class="where ps">PowerShell · Windows</span></div>
+        <div class="cmd-body"><div class="cmd-line"><span class="prompt ps">PS&gt;</span><span class="code"><span class="ck">docker</span> <span class="cs">run</span> <span class="cf">-d</span> <span class="cf">--name</span> <span class="cv">meu-nginx</span> <span class="cv">nginx</span></span></div></div>
+      </div>
+      <p class="nota"><span class="fg">-d</span> (detached) roda em background, sem prender o terminal. <span class="fg">--name meu-nginx</span> dá um apelido ao container. <span class="et">nginx</span> é um servidor web leve (baixado na hora, se preciso).</p>
+    </div>
+
+    <div class="passo">
+      <div class="passo-hdr"><span class="passo-num">1.6</span><span class="passo-titulo">Ver o que está rodando</span></div>
+      <div class="onde ps">🪟 PowerShell</div>
+      <div class="cmd">
+        <div class="cmd-bar"><span class="where ps">PowerShell · Windows</span></div>
+        <div class="cmd-body"><div class="cmd-line"><span class="prompt ps">PS&gt;</span><span class="code"><span class="ck">docker</span> <span class="cs">ps</span></span></div></div>
+      </div>
+      <div class="cmd">
+        <div class="cmd-bar"><span class="where ps">PowerShell · Windows</span></div>
+        <div class="cmd-body"><div class="cmd-line"><span class="prompt ps">PS&gt;</span><span class="code"><span class="ck">docker</span> <span class="cs">ps</span> <span class="cf">-a</span></span></div></div>
+      </div>
+      <p class="nota"><span class="fg">docker ps</span> mostra só os containers <b>em execução</b>. <span class="fg">docker ps -a</span> mostra <b>todos</b>, inclusive os já parados (como o hello-world, com status <span class="mono">Exited</span>).</p>
+    </div>
+
+    <div class="passo">
+      <div class="passo-hdr"><span class="passo-num">1.7</span><span class="passo-titulo">Parar e remover (um por vez)</span></div>
+      <div class="onde ps">🪟 PowerShell — quatro comandos, um por vez</div>
+      <div class="cmd">
+        <div class="cmd-bar"><span class="where ps">PowerShell · 1 de 3</span></div>
+        <div class="cmd-body"><div class="cmd-line"><span class="prompt ps">PS&gt;</span><span class="code"><span class="ck">docker</span> <span class="cs">stop</span> <span class="cv">meu-nginx</span></span></div></div>
+      </div>
+      <div class="cmd">
+        <div class="cmd-bar"><span class="where ps">PowerShell · 2 de 3</span></div>
+        <div class="cmd-body"><div class="cmd-line"><span class="prompt ps">PS&gt;</span><span class="code"><span class="ck">docker</span> <span class="cs">rm</span> <span class="cv">meu-nginx</span></span></div></div>
+      </div>
+      <div class="cmd">
+        <div class="cmd-bar"><span class="where ps">PowerShell · 3 de 3</span></div>
+        <div class="cmd-body"><div class="cmd-line"><span class="prompt ps">PS&gt;</span><span class="code"><span class="ck">docker</span> <span class="cs">rmi</span> <span class="cv">hello-world</span></span></div></div>
+      </div>
+      <p class="nota"><span class="fg">stop</span> desliga o container com segurança; <span class="fg">rm</span> apaga o container (a imagem continua no disco); <span class="fg">rmi</span> apaga a imagem.</p>
+      <div class="callout tip" style="margin-inline:0">
+        <h3>Atalho</h3>
+        <code>docker rm -f meu-nginx</code> para e remove num comando só, com a flag <b>-f</b> (force). Continua sendo uma linha única — pode usar.
       </div>
     </div>
 
-    <!-- PASSO 4 -->
-    <div class="step">
-      <div class="step-label"><div class="step-num">4</div><div class="step-title">Rodar um container em segundo plano (detached)</div></div>
-      <div class="terminal">
-        <div class="terminal-bar"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><span>PowerShell</span></div>
-        <div class="terminal-body">
-          <div class="cmd-block">
-            <div class="cmd-line"><span class="prompt-str">PS&gt;</span><span class="cmd"><span class="kw">docker</span> <span class="sub">run</span> <span class="flag">-d</span> <span class="flag">--name</span> <span class="val">meu-nginx</span> <span class="val">nginx</span></span></div>
-            <div class="cmd-desc">
-              <span class="hi">-d</span> (detached) roda o container em background — ele fica ativo mas não prende o terminal.<br>
-              <span class="hi">--name meu-nginx</span> dá um nome amigável ao container em vez do ID aleatório.<br>
-              <span class="hi">nginx</span> é a imagem de um servidor web leve (baixada automaticamente se não existir localmente).
-            </div>
-          </div>
-          <div class="cmd-block">
-            <div class="cmd-line"><span class="prompt-str">PS&gt;</span><span class="cmd"><span class="kw">docker</span> <span class="sub">ps</span></span></div>
-            <div class="cmd-desc"><span class="hi">ps</span> lista containers <strong>em execução</strong>. Você verá o ID, a imagem usada, o comando, há quanto tempo está rodando e o status.</div>
-          </div>
-          <div class="cmd-block">
-            <div class="cmd-line"><span class="prompt-str">PS&gt;</span><span class="cmd"><span class="kw">docker</span> <span class="sub">ps</span> <span class="flag">-a</span></span></div>
-            <div class="cmd-desc"><span class="hi">-a</span> (all) lista <strong>todos</strong> os containers, inclusive os que já pararam. Você verá também o hello-world com status <em>Exited</em>.</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- PASSO 5 -->
-    <div class="step">
-      <div class="step-label"><div class="step-num">5</div><div class="step-title">Parar e remover containers</div></div>
-      <div class="terminal">
-        <div class="terminal-bar"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><span>PowerShell</span></div>
-        <div class="terminal-body">
-          <div class="cmd-block">
-            <div class="cmd-line"><span class="prompt-str">PS&gt;</span><span class="cmd"><span class="kw">docker</span> <span class="sub">stop</span> <span class="val">meu-nginx</span></span></div>
-            <div class="cmd-desc"><span class="hi">stop</span> envia um sinal de encerramento ao container. Ele para de forma segura, preservando seu estado.</div>
-          </div>
-          <div class="cmd-block">
-            <div class="cmd-line"><span class="prompt-str">PS&gt;</span><span class="cmd"><span class="kw">docker</span> <span class="sub">rm</span> <span class="val">meu-nginx</span></span></div>
-            <div class="cmd-desc"><span class="hi">rm</span> remove o container da lista. Atenção: apenas o container é excluído, a imagem permanece no disco.</div>
-          </div>
-          <div class="cmd-block">
-            <div class="cmd-line"><span class="prompt-str">PS&gt;</span><span class="cmd"><span class="kw">docker</span> <span class="sub">rmi</span> <span class="val">hello-world</span></span></div>
-            <div class="cmd-desc"><span class="hi">rmi</span> (remove image) apaga a imagem do disco local. Use somente quando não precisar mais dela.</div>
-          </div>
-        </div>
-      </div>
-      <div class="tip"><strong>💡 DICA</strong>Use <code style="color:var(--accent1);font-family:'JetBrains Mono',monospace">docker rm -f meu-nginx</code> para parar e remover em um único comando com a flag <strong>-f</strong> (force).</div>
-    </div>
-
-    <hr class="divider">
-    <p style="font-size:.82rem;color:var(--muted);margin-bottom:10px;font-family:'JetBrains Mono',monospace;letter-spacing:.05em;">✅ CHECKLIST FINAL — ATIVIDADE 1</p>
+    <p class="check-label">Checklist — Atividade 1</p>
     <ul class="checklist">
-      <li><span>Docker instalado e funcionando (docker version sem erros)</span></li>
-      <li><span>Imagem hello-world baixada e executada com sucesso</span></li>
-      <li><span>Container nginx rodando em background com nome personalizado</span></li>
-      <li><span>Uso de docker ps / docker ps -a compreendido</span></li>
-      <li><span>Container parado, removido e imagem deletada do disco</span></li>
+      <li><span class="cbox"></span><span>Docker verificado com <span class="mono">docker version</span> sem erros</span></li>
+      <li><span class="cbox"></span><span>Imagem hello-world baixada e executada</span></li>
+      <li><span class="cbox"></span><span>nginx rodando em background com nome personalizado</span></li>
+      <li><span class="cbox"></span><span>Diferença entre <span class="mono">docker ps</span> e <span class="mono">docker ps -a</span> entendida</span></li>
+      <li><span class="cbox"></span><span>Container parado, removido e imagem apagada</span></li>
     </ul>
   </div>
 </div>
 
-
-<!-- ═══════════════════  ATIVIDADE 2  ═══════════════════ -->
-<div class="activity">
-  <div class="activity-header">
-    <div class="act-number n2">02</div>
-    <div class="act-info">
-      <h2>Container Ubuntu — Manipulação de Arquivos</h2>
-      <p>Entre em um container Ubuntu interativo, crie diretórios e arquivos, escreva conteúdo, navegue pelo sistema e saia do container com segurança.</p>
-      <div class="act-tags">
-        <span class="tag green">-it</span>
-        <span class="tag green">bash</span>
-        <span class="tag green">mkdir / touch</span>
-        <span class="tag green">echo / cat</span>
-        <span class="tag green">exit</span>
-        <span class="tag green">docker exec</span>
+<!-- ═══════ ATIVIDADE 2 ═══════ -->
+<div class="atividade">
+  <div class="ativ-hdr">
+    <span class="ativ-badge">02</span>
+    <div class="ativ-info">
+      <h2>Container Ubuntu — manipulação de arquivos</h2>
+      <p>Entrar num container Ubuntu interativo, criar pastas e arquivos, escrever e ler conteúdo, e sair com segurança.</p>
+      <div class="ativ-tags">
+        <span class="tag">-it bash</span><span class="tag">mkdir</span><span class="tag">touch</span><span class="tag">echo / cat</span><span class="tag">exit</span><span class="tag">docker exec</span>
       </div>
     </div>
-    <div class="time-badge t2">⏱ 35 min</div>
+    <span class="ativ-time">~35 min</span>
   </div>
+  <div class="ativ-body">
+    <div class="objetivo"><span class="lab">Objetivo</span>Trabalhar dentro de um container Linux como se fosse um servidor de verdade — criando, editando e lendo arquivos, sem instalar nada no Windows.</div>
 
-  <div class="activity-body">
-    <div class="objective-box">
-      <strong>🎯 OBJETIVO</strong>
-      Usar o modo interativo do Docker para trabalhar dentro de um container Linux como se fosse um servidor real — criando, editando e lendo arquivos sem instalar nada no Windows.
-    </div>
-
-    <!-- PASSO 1 -->
-    <div class="step">
-      <div class="step-label"><div class="step-num">1</div><div class="step-title">Iniciar um container Ubuntu interativo</div></div>
-      <div class="terminal">
-        <div class="terminal-bar"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><span>PowerShell</span></div>
-        <div class="terminal-body">
-          <div class="cmd-block">
-            <div class="cmd-line"><span class="prompt-str">PS&gt;</span><span class="cmd"><span class="kw">docker</span> <span class="sub">run</span> <span class="flag">-it</span> <span class="flag">--name</span> <span class="val">meu-ubuntu</span> <span class="val">ubuntu</span> <span class="sub">bash</span></span></div>
-            <div class="cmd-desc">
-              <span class="hi">-i</span> mantém o STDIN aberto (input interativo).<br>
-              <span class="hi">-t</span> aloca um pseudo-terminal (TTY), dando a interface de linha de comando.<br>
-              <span class="hi">ubuntu</span> é a imagem oficial do Ubuntu.<br>
-              <span class="hi">bash</span> é o shell que será executado ao entrar no container.
-            </div>
-          </div>
-          <div class="output ok">root@a3f1c2d4e5b6:/#</div>
-          <div class="output info">← Você agora está DENTRO do container! O hash após @ é o ID do container.</div>
-        </div>
+    <div class="passo">
+      <div class="passo-hdr"><span class="passo-num">2.1</span><span class="passo-titulo">Entrar num Ubuntu interativo</span></div>
+      <div class="onde ps">🪟 PowerShell</div>
+      <div class="cmd">
+        <div class="cmd-bar"><span class="where ps">PowerShell · Windows</span></div>
+        <div class="cmd-body"><div class="cmd-line"><span class="prompt ps">PS&gt;</span><span class="code"><span class="ck">docker</span> <span class="cs">run</span> <span class="cf">-it</span> <span class="cf">--name</span> <span class="cv">meu-ubuntu</span> <span class="cv">ubuntu</span> <span class="cs">bash</span></span></div></div>
+        <div class="cmd-out good">root@a3f1c2d4e5b6:/#  ← agora você está DENTRO do container</div>
       </div>
-      <div class="warn"><strong>⚠️ ATENÇÃO</strong>O prompt mudou de <strong>PS&gt;</strong> para <strong>root@...:#</strong>. Agora você está dentro do Linux! Os comandos a seguir são executados <em>dentro do container</em>.</div>
-    </div>
-
-    <!-- PASSO 2 -->
-    <div class="step">
-      <div class="step-label"><div class="step-num">2</div><div class="step-title">Explorar e criar estrutura de diretórios</div></div>
-      <div class="terminal">
-        <div class="terminal-bar"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><span>Dentro do Container Ubuntu</span></div>
-        <div class="terminal-body">
-          <div class="cmd-block">
-            <div class="cmd-line"><span class="prompt-str">root@.../#</span><span class="cmd"><span class="sub">pwd</span></span></div>
-            <div class="cmd-desc"><span class="hi">pwd</span> (print working directory) mostra em qual diretório você está. Resultado esperado: <em>/</em> (raiz do sistema).</div>
-          </div>
-          <div class="cmd-block">
-            <div class="cmd-line"><span class="prompt-str">root@.../#</span><span class="cmd"><span class="sub">ls</span></span></div>
-            <div class="cmd-desc">Lista os arquivos e pastas do diretório atual. Você verá a estrutura básica do Linux: <em>bin, etc, home, usr, var</em>, etc.</div>
-          </div>
-          <div class="cmd-block">
-            <div class="cmd-line"><span class="prompt-str">root@.../#</span><span class="cmd"><span class="sub">mkdir</span> <span class="flag">-p</span> <span class="val">/minha-aula/documentos/notas</span></span></div>
-            <div class="cmd-desc"><span class="hi">mkdir</span> cria diretórios. A flag <span class="hi">-p</span> cria todos os níveis de uma vez, sem erro se já existirem.</div>
-          </div>
-          <div class="cmd-block">
-            <div class="cmd-line"><span class="prompt-str">root@.../#</span><span class="cmd"><span class="sub">ls</span> <span class="flag">-la</span> <span class="val">/minha-aula</span></span></div>
-            <div class="cmd-desc"><span class="hi">-l</span> exibe detalhes (permissões, tamanho, data) e <span class="hi">-a</span> mostra arquivos ocultos também.</div>
-          </div>
-        </div>
+      <p class="nota"><span class="fg">-i</span> mantém a entrada aberta; <span class="fg">-t</span> dá a interface de terminal; juntos (<span class="fg">-it</span>) te deixam digitar dentro do container. <span class="et">bash</span> é o terminal que abre.</p>
+      <div class="callout warn" style="margin-inline:0">
+        <h3>O prompt mudou</h3>
+        Saiu de <b>PS&gt;</b> para <b>root@...:/#</b>. Agora você está no Linux, dentro do container. Os próximos passos (2.2 a 2.5) rodam <b>aqui dentro</b>.
       </div>
     </div>
 
-    <!-- PASSO 3 -->
-    <div class="step">
-      <div class="step-label"><div class="step-num">3</div><div class="step-title">Criar e escrever arquivos</div></div>
-      <div class="terminal">
-        <div class="terminal-bar"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><span>Dentro do Container Ubuntu</span></div>
-        <div class="terminal-body">
-          <div class="cmd-block">
-            <div class="cmd-line"><span class="prompt-str">root@.../#</span><span class="cmd"><span class="sub">cd</span> <span class="val">/minha-aula/documentos</span></span></div>
-            <div class="cmd-desc"><span class="hi">cd</span> (change directory) navega para a pasta especificada.</div>
-          </div>
-          <div class="cmd-block">
-            <div class="cmd-line"><span class="prompt-str">root@.../documentos#</span><span class="cmd"><span class="sub">touch</span> <span class="val">arquivo1.txt</span></span></div>
-            <div class="cmd-desc"><span class="hi">touch</span> cria um arquivo vazio. Se o arquivo já existir, atualiza a data de modificação.</div>
-          </div>
-          <div class="cmd-block">
-            <div class="cmd-line"><span class="prompt-str">root@.../documentos#</span><span class="cmd"><span class="kw">echo</span> <span class="val">"Olá, Docker! Aula de containers."</span> <span class="flag">&gt;</span> <span class="val">arquivo1.txt</span></span></div>
-            <div class="cmd-desc"><span class="hi">echo</span> imprime texto. O operador <span class="hi">&gt;</span> redireciona a saída para um arquivo (sobrescreve). Use <span class="hi">&gt;&gt;</span> para adicionar ao final sem apagar.</div>
-          </div>
-          <div class="cmd-block">
-            <div class="cmd-line"><span class="prompt-str">root@.../documentos#</span><span class="cmd"><span class="kw">echo</span> <span class="val">"Segunda linha adicionada."</span> <span class="flag">&gt;&gt;</span> <span class="val">arquivo1.txt</span></span></div>
-            <div class="cmd-desc">O <span class="hi">&gt;&gt;</span> acrescenta o conteúdo ao final do arquivo sem apagar o que já estava lá.</div>
-          </div>
-          <div class="cmd-block">
-            <div class="cmd-line"><span class="prompt-str">root@.../documentos#</span><span class="cmd"><span class="sub">cat</span> <span class="val">arquivo1.txt</span></span></div>
-            <div class="cmd-desc"><span class="hi">cat</span> exibe o conteúdo de um arquivo no terminal.</div>
-          </div>
-          <div class="output">Olá, Docker! Aula de containers.</div>
-          <div class="output">Segunda linha adicionada.</div>
-        </div>
+    <div class="passo">
+      <div class="passo-hdr"><span class="passo-num">2.2</span><span class="passo-titulo">Onde estou? Criar estrutura de pastas</span></div>
+      <div class="onde linux">🐧 Dentro do Ubuntu — root@…</div>
+      <div class="cmd">
+        <div class="cmd-bar"><span class="where linux">Ubuntu · root@…</span></div>
+        <div class="cmd-body"><div class="cmd-line"><span class="prompt linux">#</span><span class="code"><span class="cs">pwd</span></span></div></div>
+      </div>
+      <div class="cmd">
+        <div class="cmd-bar"><span class="where linux">Ubuntu · root@…</span></div>
+        <div class="cmd-body"><div class="cmd-line"><span class="prompt linux">#</span><span class="code"><span class="cs">mkdir</span> <span class="cf">-p</span> <span class="cv">/minha-aula/documentos/notas</span></span></div></div>
+      </div>
+      <div class="cmd">
+        <div class="cmd-bar"><span class="where linux">Ubuntu · root@…</span></div>
+        <div class="cmd-body"><div class="cmd-line"><span class="prompt linux">#</span><span class="code"><span class="cs">ls</span> <span class="cf">-la</span> <span class="cv">/minha-aula</span></span></div></div>
+      </div>
+      <p class="nota"><span class="fg">pwd</span> mostra onde você está (deve ser <span class="mono">/</span>). <span class="fg">mkdir -p</span> cria toda a árvore de pastas de uma vez. <span class="fg">ls -la</span> lista com detalhes (permissões, tamanho, data).</p>
+    </div>
+
+    <div class="passo">
+      <div class="passo-hdr"><span class="passo-num">2.3</span><span class="passo-titulo">Criar e escrever num arquivo</span></div>
+      <div class="onde linux">🐧 Dentro do Ubuntu — root@…</div>
+      <div class="cmd">
+        <div class="cmd-bar"><span class="where linux">Ubuntu · root@…</span></div>
+        <div class="cmd-body"><div class="cmd-line"><span class="prompt linux">#</span><span class="code"><span class="cs">cd</span> <span class="cv">/minha-aula/documentos</span></span></div></div>
+      </div>
+      <div class="cmd">
+        <div class="cmd-bar"><span class="where linux">Ubuntu · root@…</span></div>
+        <div class="cmd-body"><div class="cmd-line"><span class="prompt linux">#</span><span class="code"><span class="ck">echo</span> <span class="cv">"Olá, Docker! Aula de containers."</span> <span class="cf">&gt;</span> <span class="cv">arquivo1.txt</span></span></div></div>
+      </div>
+      <div class="cmd">
+        <div class="cmd-bar"><span class="where linux">Ubuntu · root@…</span></div>
+        <div class="cmd-body"><div class="cmd-line"><span class="prompt linux">#</span><span class="code"><span class="ck">echo</span> <span class="cv">"Segunda linha."</span> <span class="cf">&gt;&gt;</span> <span class="cv">arquivo1.txt</span></span></div></div>
+      </div>
+      <div class="cmd">
+        <div class="cmd-bar"><span class="where linux">Ubuntu · root@…</span></div>
+        <div class="cmd-body"><div class="cmd-line"><span class="prompt linux">#</span><span class="code"><span class="cs">cat</span> <span class="cv">arquivo1.txt</span></span></div></div>
+        <div class="cmd-out">Olá, Docker! Aula de containers.
+Segunda linha.</div>
+      </div>
+      <p class="nota"><span class="fg">echo "texto" &gt; arquivo</span> escreve no arquivo (sobrescreve). <span class="fg">&gt;&gt;</span> acrescenta ao final sem apagar. <span class="fg">cat</span> mostra o conteúdo. Aqui o <span class="mono">&gt;</span> funciona porque estamos no <b>bash do Ubuntu</b>, não no PowerShell.</p>
+    </div>
+
+    <div class="passo">
+      <div class="passo-hdr"><span class="passo-num">2.4</span><span class="passo-titulo">Copiar, renomear e listar</span></div>
+      <div class="onde linux">🐧 Dentro do Ubuntu — root@…</div>
+      <div class="cmd">
+        <div class="cmd-bar"><span class="where linux">Ubuntu · root@…</span></div>
+        <div class="cmd-body"><div class="cmd-line"><span class="prompt linux">#</span><span class="code"><span class="cs">cp</span> <span class="cv">arquivo1.txt</span> <span class="cv">notas/copia.txt</span></span></div></div>
+      </div>
+      <div class="cmd">
+        <div class="cmd-bar"><span class="where linux">Ubuntu · root@…</span></div>
+        <div class="cmd-body"><div class="cmd-line"><span class="prompt linux">#</span><span class="code"><span class="cs">mv</span> <span class="cv">arquivo1.txt</span> <span class="cv">renomeado.txt</span></span></div></div>
+      </div>
+      <div class="cmd">
+        <div class="cmd-bar"><span class="where linux">Ubuntu · root@…</span></div>
+        <div class="cmd-body"><div class="cmd-line"><span class="prompt linux">#</span><span class="code"><span class="cs">ls</span> <span class="cf">-R</span></span></div></div>
+      </div>
+      <p class="nota"><span class="fg">cp</span> copia (mantém o original); <span class="fg">mv</span> move ou renomeia (o original some do nome antigo); <span class="fg">ls -R</span> lista tudo, inclusive subpastas.</p>
+    </div>
+
+    <div class="passo">
+      <div class="passo-hdr"><span class="passo-num">2.5</span><span class="passo-titulo">Sair e reentrar no container</span></div>
+      <div class="onde linux">🐧 Dentro do Ubuntu — root@…</div>
+      <div class="cmd">
+        <div class="cmd-bar"><span class="where linux">Ubuntu · root@…</span></div>
+        <div class="cmd-body"><div class="cmd-line"><span class="prompt linux">#</span><span class="code"><span class="cs">exit</span></span></div></div>
+        <div class="cmd-out">O prompt volta a ser PS&gt; — você saiu do container.</div>
+      </div>
+      <div class="onde ps" style="margin-top:12px">🪟 PowerShell — de volta na sua máquina</div>
+      <div class="cmd">
+        <div class="cmd-bar"><span class="where ps">PowerShell · 1 de 2</span></div>
+        <div class="cmd-body"><div class="cmd-line"><span class="prompt ps">PS&gt;</span><span class="code"><span class="ck">docker</span> <span class="cs">start</span> <span class="cv">meu-ubuntu</span></span></div></div>
+      </div>
+      <div class="cmd">
+        <div class="cmd-bar"><span class="where ps">PowerShell · 2 de 2</span></div>
+        <div class="cmd-body"><div class="cmd-line"><span class="prompt ps">PS&gt;</span><span class="code"><span class="ck">docker</span> <span class="cs">exec</span> <span class="cf">-it</span> <span class="cv">meu-ubuntu</span> <span class="cs">bash</span></span></div></div>
+      </div>
+      <p class="nota"><span class="fg">exit</span> fecha o bash; como era o processo principal, o container também para. <span class="fg">docker start</span> liga de novo — <b>seus arquivos continuam lá</b>. <span class="fg">docker exec -it ... bash</span> entra num container <b>já rodando</b> (diferente do <span class="mono">run</span>, que cria um novo).</p>
+      <div class="callout tip" style="margin-inline:0">
+        <h3>Sair sem parar o container</h3>
+        Dentro do container, <b>Ctrl+P</b> seguido de <b>Ctrl+Q</b> solta o terminal sem encerrar o container. Para esta atividade, pode usar <code>exit</code> normalmente antes de ir à próxima.
       </div>
     </div>
 
-    <!-- PASSO 4 -->
-    <div class="step">
-      <div class="step-label"><div class="step-num">4</div><div class="step-title">Copiar, mover e remover arquivos</div></div>
-      <div class="terminal">
-        <div class="terminal-bar"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><span>Dentro do Container Ubuntu</span></div>
-        <div class="terminal-body">
-          <div class="cmd-block">
-            <div class="cmd-line"><span class="prompt-str">root@.../documentos#</span><span class="cmd"><span class="sub">cp</span> <span class="val">arquivo1.txt</span> <span class="val">notas/copia.txt</span></span></div>
-            <div class="cmd-desc"><span class="hi">cp</span> (copy) copia o arquivo para outra localização. O original é mantido.</div>
-          </div>
-          <div class="cmd-block">
-            <div class="cmd-line"><span class="prompt-str">root@.../documentos#</span><span class="cmd"><span class="sub">mv</span> <span class="val">arquivo1.txt</span> <span class="val">arquivo_renomeado.txt</span></span></div>
-            <div class="cmd-desc"><span class="hi">mv</span> (move) renomeia ou move o arquivo. O arquivo original deixa de existir no caminho antigo.</div>
-          </div>
-          <div class="cmd-block">
-            <div class="cmd-line"><span class="prompt-str">root@.../documentos#</span><span class="cmd"><span class="sub">ls</span> <span class="flag">-R</span></span></div>
-            <div class="cmd-desc"><span class="hi">-R</span> lista recursivamente todos os arquivos e subdiretórios abaixo do atual.</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- PASSO 5 -->
-    <div class="step">
-      <div class="step-label"><div class="step-num">5</div><div class="step-title">Sair do container e gerenciá-lo de fora</div></div>
-      <div class="terminal">
-        <div class="terminal-bar"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><span>Dentro do Container → PowerShell</span></div>
-        <div class="terminal-body">
-          <div class="cmd-block">
-            <div class="cmd-line"><span class="prompt-str">root@.../#</span><span class="cmd"><span class="sub">exit</span></span></div>
-            <div class="cmd-desc"><span class="hi">exit</span> encerra o bash e sai do container. Como o bash era o processo principal, o container também para.</div>
-          </div>
-          <div class="output info">← Você voltou ao PowerShell!</div>
-          <div class="cmd-block">
-            <div class="cmd-line"><span class="prompt-str">PS&gt;</span><span class="cmd"><span class="kw">docker</span> <span class="sub">start</span> <span class="val">meu-ubuntu</span></span></div>
-            <div class="cmd-desc"><span class="hi">start</span> reinicia um container que foi parado. Os arquivos criados dentro continuam lá!</div>
-          </div>
-          <div class="cmd-block">
-            <div class="cmd-line"><span class="prompt-str">PS&gt;</span><span class="cmd"><span class="kw">docker</span> <span class="sub">exec</span> <span class="flag">-it</span> <span class="val">meu-ubuntu</span> <span class="sub">bash</span></span></div>
-            <div class="cmd-desc"><span class="hi">exec</span> executa um comando em um container <strong>já em execução</strong>. Diferente do run (que cria novo), o exec entra no container existente.</div>
-          </div>
-        </div>
-      </div>
-      <div class="tip"><strong>💡 ATENÇÃO</strong>Use <strong>Ctrl + P</strong> seguido de <strong>Ctrl + Q</strong> para sair do container <em>sem encerrá-lo</em>. DIGITE EXIT PARA SAIR DO CONTAINER E INICIAR A ATIVIDADE NOVA.</div>
-    </div>
-
-    <hr class="divider">
-    <p style="font-size:.82rem;color:var(--muted);margin-bottom:10px;font-family:'JetBrains Mono',monospace;letter-spacing:.05em;">✅ CHECKLIST FINAL — ATIVIDADE 2</p>
+    <p class="check-label">Checklist — Atividade 2</p>
     <ul class="checklist">
-      <li><span>Container Ubuntu iniciado no modo interativo (-it bash)</span></li>
-      <li><span>Estrutura de diretórios criada com mkdir -p</span></li>
-      <li><span>Arquivo criado, escrito e lido com touch, echo e cat</span></li>
-      <li><span>Arquivo copiado e renomeado com cp e mv</span></li>
-      <li><span>Saída do container com exit e reentrada com docker exec</span></li>
+      <li><span class="cbox"></span><span>Ubuntu iniciado no modo interativo (<span class="mono">-it bash</span>)</span></li>
+      <li><span class="cbox"></span><span>Pastas criadas com <span class="mono">mkdir -p</span></span></li>
+      <li><span class="cbox"></span><span>Arquivo criado, escrito e lido com <span class="mono">echo</span> e <span class="mono">cat</span></span></li>
+      <li><span class="cbox"></span><span>Arquivo copiado e renomeado com <span class="mono">cp</span> e <span class="mono">mv</span></span></li>
+      <li><span class="cbox"></span><span>Saída com <span class="mono">exit</span> e reentrada com <span class="mono">docker exec</span></span></li>
     </ul>
   </div>
 </div>
 
-
-<!-- ═══════════════════  ATIVIDADE 3  ═══════════════════ -->
-<div class="activity">
-  <div class="activity-header">
-    <div class="act-number n3">03</div>
-    <div class="act-info">
-      <h2>Servidor Web com Página Personalizada</h2>
-      <p>Crie uma página HTML no PowerShell, coloque dentro de um container nginx com mapeamento de porta e acesse pelo browser junto com a turma.</p>
-      <div class="act-tags">
-        <span class="tag lilac">-p (porta)</span>
-        <span class="tag lilac">-v (volume)</span>
-        <span class="tag lilac">nginx</span>
-        <span class="tag lilac">docker cp</span>
-        <span class="tag lilac">localhost</span>
-        <span class="tag yellow">browser</span>
+<!-- ═══════ ATIVIDADE 3 ═══════ -->
+<div class="atividade">
+  <div class="ativ-hdr">
+    <span class="ativ-badge">03</span>
+    <div class="ativ-info">
+      <h2>Servidor web com página personalizada</h2>
+      <p>Criar uma página HTML, servi-la por um container nginx com mapeamento de porta e volume, e acessar pelo navegador.</p>
+      <div class="ativ-tags">
+        <span class="tag">-p porta</span><span class="tag">-v volume</span><span class="tag">nginx</span><span class="tag">localhost:8080</span><span class="tag">docker logs</span>
       </div>
     </div>
-    <div class="time-badge t3">⏱ 45 min</div>
+    <span class="ativ-time">~45 min</span>
   </div>
+  <div class="ativ-body">
+    <div class="objetivo"><span class="lab">Objetivo</span>Subir um servidor web nginx no Docker, mapear a porta para o seu PC e servir uma página HTML feita por você — acessível em <b>localhost:8080</b>.</div>
 
-  <div class="activity-body">
-    <div class="objective-box">
-      <strong>🎯 OBJETIVO</strong>
-      Subir um servidor web nginx dentro do Docker, mapear a porta para o computador host e servir uma página HTML criada por você — acessível pelo browser em <strong>localhost:8080</strong>.
-    </div>
-
-    <!-- PASSO 1 -->
-    <div class="step">
-      <div class="step-label"><div class="step-num">1</div><div class="step-title">Criar a página HTML no PowerShell</div></div>
-      <div class="terminal">
-        <div class="terminal-bar"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><span>PowerShell</span></div>
-        <div class="terminal-body">
-          <div class="cmd-block">
-            <div class="cmd-line"><span class="prompt-str">PS&gt;</span><span class="cmd"><span class="sub">mkdir</span> <span class="val">C:\docker-site</span></span></div>
-            <div class="cmd-desc">Cria a pasta que guardará os arquivos do nosso site no computador local (host).</div>
-          </div>
-          <div class="cmd-block">
-            <div class="cmd-line"><span class="prompt-str">PS&gt;</span><span class="cmd"><span class="kw">Set-Content</span> <span class="flag">-Path</span> <span class="val">"C:\docker-site\index.html"</span> <span class="flag">-Value</span> <span class="val">@"</span></span></div>
-            <div class="cmd-line" style="padding-left:20px"><span class="cmd" style="color:#4d5966">&lt;!DOCTYPE html&gt;</span></div>
-            <div class="cmd-line" style="padding-left:20px"><span class="cmd" style="color:#4d5966">&lt;html&gt;&lt;head&gt;&lt;meta charset="UTF-8"&gt;</span></div>
-            <div class="cmd-line" style="padding-left:20px"><span class="cmd" style="color:#4d5966">&lt;title&gt;Meu Container Web&lt;/title&gt;&lt;/head&gt;</span></div>
-            <div class="cmd-line" style="padding-left:20px"><span class="cmd" style="color:#4d5966">&lt;body&gt;&lt;h1&gt;🐳 Docker funcionando!&lt;/h1&gt;</span></div>
-            <div class="cmd-line" style="padding-left:20px"><span class="cmd" style="color:#4d5966">&lt;p&gt;Servidor web rodando dentro de um container nginx.&lt;/p&gt;</span></div>
-            <div class="cmd-line" style="padding-left:20px"><span class="cmd" style="color:#4d5966">&lt;/body&gt;&lt;/html&gt;</span></div>
-            <div class="cmd-line"><span class="cmd"><span class="val">"@</span></span></div>
-            <div class="cmd-desc"><span class="hi">Set-Content</span> é o comando PowerShell para escrever conteúdo em um arquivo. O bloco <span class="hi">@" ... "@</span> é chamado de <em>here-string</em> e permite escrever texto com múltiplas linhas.</div>
-          </div>
-        </div>
+    <div class="passo">
+      <div class="passo-hdr"><span class="passo-num">3.1</span><span class="passo-titulo">Criar a pasta do site</span></div>
+      <div class="onde ps">🪟 PowerShell</div>
+      <div class="cmd">
+        <div class="cmd-bar"><span class="where ps">PowerShell · Windows</span></div>
+        <div class="cmd-body"><div class="cmd-line"><span class="prompt ps">PS&gt;</span><span class="code"><span class="cs">mkdir</span> <span class="cv">C:\docker-site</span></span></div></div>
       </div>
-      <div class="tip"><strong>💡 DICA</strong>Abra o arquivo <strong>C:\docker-site\index.html</strong> no Notepad ou VS Code para personalizar o conteúdo antes de subir o servidor!</div>
+      <p class="nota">Cria a pasta no seu PC que vai guardar os arquivos do site. É essa pasta que vamos compartilhar com o container (o volume).</p>
     </div>
 
-    <!-- PASSO 2 -->
-    <div class="step">
-      <div class="step-label"><div class="step-num">2</div><div class="step-title">Iniciar o nginx com mapeamento de porta e volume</div></div>
-      <div class="terminal">
-        <div class="terminal-bar"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><span>PowerShell</span></div>
-        <div class="terminal-body">
-          <div class="cmd-block">
-            <div class="cmd-line"><span class="prompt-str">PS&gt;</span><span class="cmd"><span class="kw">docker</span> <span class="sub">run</span> <span class="flag">-d</span> <span class="flag">--name</span> <span class="val">servidor-web</span> <span class="flag">-p</span> <span class="val">8080:80</span> <span class="flag">-v</span> <span class="val">C:\docker-site:/usr/share/nginx/html</span> <span class="val">nginx</span></span></div>
-            <div class="cmd-desc">
-              <span class="hi">-d</span> — roda em background (detached).<br>
-              <span class="hi">--name servidor-web</span> — nome amigável para o container.<br>
-              <span class="hi">-p 8080:80</span> — mapeia a porta: <strong>8080 do seu PC</strong> aponta para a <strong>porta 80 do container</strong> (porta padrão do nginx).<br>
-              <span class="hi">-v C:\docker-site:/usr/share/nginx/html</span> — monta um volume: a pasta local é espelhada dentro do container. Qualquer mudança no HTML aparece imediatamente no browser!
-            </div>
-          </div>
-        </div>
+    <div class="passo">
+      <div class="passo-hdr"><span class="passo-num">3.2</span><span class="passo-titulo">Criar a página index.html</span></div>
+      <p class="nota" style="border:none;padding-left:0;margin-bottom:12px">Há dois jeitos. O <b>Jeito A</b> (recomendado) é mais visual e não depende de digitar código no terminal. O <b>Jeito B</b> é um atalho de uma linha, caso prefira.</p>
+
+      <div class="callout tip" style="margin-inline:0;margin-top:0">
+        <h3>Jeito A — pelo Bloco de Notas (recomendado)</h3>
+        <b>1.</b> Abra o PowerShell e rode o comando abaixo para abrir o Bloco de Notas já no arquivo certo:
+      </div>
+      <div class="onde ps" style="margin-top:12px">🪟 PowerShell</div>
+      <div class="cmd">
+        <div class="cmd-bar"><span class="where ps">PowerShell · Windows</span></div>
+        <div class="cmd-body"><div class="cmd-line"><span class="prompt ps">PS&gt;</span><span class="code"><span class="ck">notepad</span> <span class="cv">C:\docker-site\index.html</span></span></div></div>
+      </div>
+      <p class="nota"><b>2.</b> O Bloco de Notas pergunta se quer criar o arquivo — clique em <b>Sim</b>. <b>3.</b> Cole o conteúdo abaixo, salve (<span class="mono">Ctrl+S</span>) e feche.</p>
+
+      <div class="snippet">
+        <div class="snip-bar"><span>index.html — cole isto no Bloco de Notas</span><button type="button" class="snip-copy" data-snippet="html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>copiar</button></div>
+        <pre id="snip-html">&lt;!DOCTYPE html&gt;
+&lt;html lang="pt-BR"&gt;
+&lt;head&gt;
+  &lt;meta charset="UTF-8"&gt;
+  &lt;title&gt;Meu Container Web&lt;/title&gt;
+&lt;/head&gt;
+&lt;body style="font-family:sans-serif;text-align:center;padding:60px"&gt;
+  &lt;h1&gt;🐳 Docker funcionando!&lt;/h1&gt;
+  &lt;p&gt;Servidor web rodando dentro de um container nginx.&lt;/p&gt;
+  &lt;p&gt;Feito por: SEU NOME AQUI&lt;/p&gt;
+&lt;/body&gt;
+&lt;/html&gt;</pre>
+      </div>
+
+      <div class="callout tip" style="margin-inline:0">
+        <h3>Jeito B — atalho de uma linha</h3>
+        Se preferir não abrir o editor, este comando cria o arquivo direto. É uma linha única — funciona no PowerShell restrito:
+      </div>
+      <div class="onde ps" style="margin-top:12px">🪟 PowerShell</div>
+      <div class="cmd">
+        <div class="cmd-bar"><span class="where ps">PowerShell · Windows — uma linha só</span></div>
+        <div class="cmd-body"><div class="cmd-line"><span class="prompt ps">PS&gt;</span><span class="code"><span class="ck">Set-Content</span> <span class="cv">C:\docker-site\index.html</span> <span class="cv">"&lt;h1&gt;🐳 Docker funcionando!&lt;/h1&gt;&lt;p&gt;Feito por SEU NOME&lt;/p&gt;"</span></span></div></div>
+      </div>
+      <p class="nota"><span class="fg">Set-Content</span> escreve o texto num arquivo. Aqui está tudo numa linha só, sem o bloco multilinha (<span class="mono">@"..."@</span>) do roteiro antigo — assim não esbarra na limitação do PowerShell.</p>
+    </div>
+
+    <div class="passo">
+      <div class="passo-hdr"><span class="passo-num">3.3</span><span class="passo-titulo">Subir o nginx com porta e volume</span></div>
+      <div class="onde ps">🪟 PowerShell</div>
+      <div class="cmd">
+        <div class="cmd-bar"><span class="where ps">PowerShell · Windows — uma linha só</span></div>
+        <div class="cmd-body"><div class="cmd-line"><span class="prompt ps">PS&gt;</span><span class="code"><span class="ck">docker</span> <span class="cs">run</span> <span class="cf">-d</span> <span class="cf">--name</span> <span class="cv">servidor-web</span> <span class="cf">-p</span> <span class="cv">8080:80</span> <span class="cf">-v</span> <span class="cv">C:\docker-site:/usr/share/nginx/html</span> <span class="cv">nginx</span></span></div></div>
+      </div>
+      <p class="nota"><span class="fg">-d</span> roda em background. <span class="fg">--name servidor-web</span> nomeia o container. <span class="fg">-p 8080:80</span> liga a porta 8080 do seu PC à porta 80 do nginx. <span class="fg">-v C:\docker-site:/usr/share/nginx/html</span> espelha a sua pasta dentro do container — qualquer mudança no HTML aparece na hora.</p>
+    </div>
+
+    <div class="passo">
+      <div class="passo-hdr"><span class="passo-num">3.4</span><span class="passo-titulo">Conferir e abrir no navegador</span></div>
+      <div class="onde ps">🪟 PowerShell</div>
+      <div class="cmd">
+        <div class="cmd-bar"><span class="where ps">PowerShell · Windows</span></div>
+        <div class="cmd-body"><div class="cmd-line"><span class="prompt ps">PS&gt;</span><span class="code"><span class="ck">docker</span> <span class="cs">ps</span></span></div></div>
+        <div class="cmd-out good">PORTS: 0.0.0.0:8080-&gt;80/tcp   NAMES: servidor-web</div>
+      </div>
+      <div class="cmd">
+        <div class="cmd-bar"><span class="where ps">PowerShell · Windows</span></div>
+        <div class="cmd-body"><div class="cmd-line"><span class="prompt ps">PS&gt;</span><span class="code"><span class="ck">Start-Process</span> <span class="cv">"http://localhost:8080"</span></span></div></div>
+      </div>
+      <p class="nota">No <span class="fg">docker ps</span>, confirme a porta <span class="mono">8080-&gt;80</span>. <span class="fg">Start-Process</span> abre o navegador direto na página — você verá seu HTML servido pelo nginx. Ou simplesmente abra <b>http://localhost:8080</b> no navegador.</p>
+    </div>
+
+    <div class="passo">
+      <div class="passo-hdr"><span class="passo-num">3.5</span><span class="passo-titulo">Atualizar o site em tempo real</span></div>
+      <div class="onde ps">🪟 PowerShell</div>
+      <div class="cmd">
+        <div class="cmd-bar"><span class="where ps">PowerShell · Windows — uma linha só</span></div>
+        <div class="cmd-body"><div class="cmd-line"><span class="prompt ps">PS&gt;</span><span class="code"><span class="ck">Add-Content</span> <span class="cv">C:\docker-site\index.html</span> <span class="cv">"&lt;p&gt;Linha nova em tempo real!&lt;/p&gt;"</span></span></div></div>
+      </div>
+      <p class="nota"><span class="fg">Add-Content</span> acrescenta texto ao arquivo. Como usamos volume (<span class="fg">-v</span>), a mudança aparece <b>na hora</b> ao atualizar o navegador (F5) — sem reiniciar o container. Teste!</p>
+    </div>
+
+    <div class="passo">
+      <div class="passo-hdr"><span class="passo-num">3.6</span><span class="passo-titulo">Ver os logs de acesso</span></div>
+      <div class="onde ps">🪟 PowerShell</div>
+      <div class="cmd">
+        <div class="cmd-bar"><span class="where ps">PowerShell · Windows</span></div>
+        <div class="cmd-body"><div class="cmd-line"><span class="prompt ps">PS&gt;</span><span class="code"><span class="ck">docker</span> <span class="cs">logs</span> <span class="cv">servidor-web</span></span></div></div>
+        <div class="cmd-out">172.17.0.1 - - "GET / HTTP/1.1" 200</div>
+      </div>
+      <p class="nota"><span class="fg">docker logs</span> mostra os acessos ao nginx. Cada vez que você abre a página, aparece uma linha com o horário, o método (GET) e o código de resposta (200 = OK).</p>
+    </div>
+
+    <div class="passo">
+      <div class="passo-hdr"><span class="passo-num">3.7</span><span class="passo-titulo">Encerrar (um por vez)</span></div>
+      <div class="onde ps">🪟 PowerShell — dois comandos, um por vez</div>
+      <div class="cmd">
+        <div class="cmd-bar"><span class="where ps">PowerShell · 1 de 2</span></div>
+        <div class="cmd-body"><div class="cmd-line"><span class="prompt ps">PS&gt;</span><span class="code"><span class="ck">docker</span> <span class="cs">stop</span> <span class="cv">servidor-web</span></span></div></div>
+      </div>
+      <div class="cmd">
+        <div class="cmd-bar"><span class="where ps">PowerShell · 2 de 2</span></div>
+        <div class="cmd-body"><div class="cmd-line"><span class="prompt ps">PS&gt;</span><span class="code"><span class="ck">docker</span> <span class="cs">rm</span> <span class="cv">servidor-web</span></span></div></div>
+      </div>
+      <p class="nota">O roteiro antigo juntava os dois com <span class="mono">&amp;&amp;</span>, que o PowerShell da UMC não aceita. Aqui estão separados: primeiro <span class="fg">stop</span>, depois <span class="fg">rm</span>.</p>
+      <div class="callout tip" style="margin-inline:0">
+        <h3>Desafio extra</h3>
+        Descubra o IP do seu PC com <code>ipconfig</code> e peça a um colega para abrir <b>http://SEU-IP:8080</b> no navegador dele. (O firewall do Windows precisa liberar a porta 8080.)
       </div>
     </div>
 
-    <!-- PASSO 3 -->
-    <div class="step">
-      <div class="step-label"><div class="step-num">3</div><div class="step-title">Verificar e acessar pelo browser</div></div>
-      <div class="terminal">
-        <div class="terminal-bar"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><span>PowerShell</span></div>
-        <div class="terminal-body">
-          <div class="cmd-block">
-            <div class="cmd-line"><span class="prompt-str">PS&gt;</span><span class="cmd"><span class="kw">docker</span> <span class="sub">ps</span></span></div>
-            <div class="cmd-desc">Confirme que o container <span class="hi">servidor-web</span> está rodando. Na coluna <strong>PORTS</strong> você verá <em>0.0.0.0:8080→80/tcp</em>.</div>
-          </div>
-          <div class="output ok">CONTAINER ID   IMAGE   COMMAND   PORTS                  NAMES</div>
-          <div class="output ok">a1b2c3d4e5f6   nginx   ...       0.0.0.0:8080->80/tcp   servidor-web</div>
-          <div class="cmd-block">
-            <div class="cmd-line"><span class="prompt-str">PS&gt;</span><span class="cmd"><span class="kw">Start-Process</span> <span class="val">"http://localhost:8080"</span></span></div>
-            <div class="cmd-desc">Abre o browser padrão do Windows diretamente na URL do servidor. Você verá sua página HTML servida pelo nginx dentro do container! 🎉</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- PASSO 4 -->
-    <div class="step">
-      <div class="step-label"><div class="step-num">4</div><div class="step-title">Atualizar o site em tempo real</div></div>
-      <div class="terminal">
-        <div class="terminal-bar"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><span>PowerShell</span></div>
-        <div class="terminal-body">
-          <div class="cmd-block">
-            <div class="cmd-line"><span class="prompt-str">PS&gt;</span><span class="cmd"><span class="kw">Add-Content</span> <span class="flag">-Path</span> <span class="val">"C:\docker-site\index.html"</span> <span class="flag">-Value</span> <span class="val">"&lt;p&gt;Linha atualizada em tempo real!&lt;/p&gt;"</span></span></div>
-            <div class="cmd-desc"><span class="hi">Add-Content</span> acrescenta conteúdo ao arquivo sem apagar o que existe. Como usamos volume (<span class="hi">-v</span>), a mudança é refletida <strong>imediatamente</strong> no browser — sem reiniciar o container!</div>
-          </div>
-          <div class="cmd-block">
-            <div class="cmd-line"><span class="prompt-str">PS&gt;</span><span class="cmd"><span class="kw">docker</span> <span class="sub">logs</span> <span class="val">servidor-web</span></span></div>
-            <div class="cmd-desc"><span class="hi">logs</span> exibe os registros de acesso do nginx. Cada visita ao browser aparece como uma linha de log com IP, método HTTP, URL e código de status.</div>
-          </div>
-          <div class="output">172.17.0.1 - - [21/Apr/2026:10:30:00 +0000] "GET / HTTP/1.1" 200 512 "-"</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- PASSO 5 -->
-    <div class="step">
-      <div class="step-label"><div class="step-num">5</div><div class="step-title">Inspecionar o container e encerrar</div></div>
-      <div class="terminal">
-        <div class="terminal-bar"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><span>PowerShell</span></div>
-        <div class="terminal-body">
-          <div class="cmd-block">
-            <div class="cmd-line"><span class="prompt-str">PS&gt;</span><span class="cmd"><span class="kw">docker</span> <span class="sub">inspect</span> <span class="val">servidor-web</span></span></div>
-            <div class="cmd-desc"><span class="hi">inspect</span> retorna um JSON completo com todos os detalhes do container: IP, portas, volumes montados, variáveis de ambiente, configurações de rede e muito mais.</div>
-          </div>
-          <div class="cmd-block">
-            <div class="cmd-line"><span class="prompt-str">PS&gt;</span><span class="cmd"><span class="kw">docker</span> <span class="sub">stats</span> <span class="val">servidor-web</span></span></div>
-            <div class="cmd-desc"><span class="hi">stats</span> mostra em tempo real o consumo de CPU, memória, rede e disco do container. Pressione <span class="hi">Ctrl+C</span> para sair.</div>
-          </div>
-          <div class="cmd-block">
-            <div class="cmd-line"><span class="prompt-str">PS&gt;</span><span class="cmd"><span class="kw">docker</span> <span class="sub">stop</span> <span class="val">servidor-web</span> <span class="flag">&&</span> <span class="kw">docker</span> <span class="sub">rm</span> <span class="val">servidor-web</span></span></div>
-            <div class="cmd-desc">Para e remove o container em sequência usando o operador <span class="hi">&&</span> (o segundo comando só roda se o primeiro tiver êxito).</div>
-          </div>
-        </div>
-      </div>
-      <div class="tip"><strong>💡 BÔNUS — DESAFIO EXTRA</strong>Tente servir sua página para a turma! Descubra seu IP local com <code style="color:var(--accent1);font-family:'JetBrains Mono',monospace">ipconfig</code> e peça para um colega acessar <strong>http://SEU-IP:8080</strong> pelo browser. (Verifique se o firewall do Windows permite a porta 8080.)</div>
-    </div>
-
-    <hr class="divider">
-    <p style="font-size:.82rem;color:var(--muted);margin-bottom:10px;font-family:'JetBrains Mono',monospace;letter-spacing:.05em;">✅ CHECKLIST FINAL — ATIVIDADE 3</p>
+    <p class="check-label">Checklist — Atividade 3</p>
     <ul class="checklist">
-      <li><span>Página HTML criada com Set-Content no PowerShell</span></li>
-      <li><span>Container nginx iniciado com -p (porta) e -v (volume)</span></li>
-      <li><span>Site acessível em <strong>http://localhost:8080</strong> no browser</span></li>
-      <li><span>Página atualizada em tempo real sem reiniciar o container</span></li>
-      <li><span>Logs visualizados com docker logs e uso com docker stats</span></li>
-      <li><span>Container parado e removido corretamente</span></li>
+      <li><span class="cbox"></span><span>Página <span class="mono">index.html</span> criada em <span class="mono">C:\docker-site</span></span></li>
+      <li><span class="cbox"></span><span>nginx iniciado com <span class="mono">-p</span> (porta) e <span class="mono">-v</span> (volume)</span></li>
+      <li><span class="cbox"></span><span>Site aberto em <b>http://localhost:8080</b></span></li>
+      <li><span class="cbox"></span><span>Página atualizada em tempo real sem reiniciar</span></li>
+      <li><span class="cbox"></span><span>Logs vistos com <span class="mono">docker logs</span></span></li>
+      <li><span class="cbox"></span><span>Container parado e removido</span></li>
     </ul>
   </div>
+</div>
+
+<!-- ═══ RESGATE ═══ -->
+<h2 class="block-head">Comandos de resgate</h2>
+<p class="block-sub">Quando algo trava ou dá erro, estes comandos tiram você do aperto.</p>
+<div class="tbl-wrap">
+  <table class="tbl">
+    <thead><tr><th>Situação</th><th>Comando</th><th>O que faz</th></tr></thead>
+    <tbody>
+      <tr><td>Nome de container já existe</td><td>docker rm -f NOME</td><td>Força a remoção do container antigo para liberar o nome</td></tr>
+      <tr><td>Esqueci o que está rodando</td><td>docker ps -a</td><td>Lista todos os containers, ativos e parados</td></tr>
+      <tr><td>Travou dentro do container</td><td>Ctrl + C</td><td>Interrompe o comando atual (ex: docker stats, logs -f)</td></tr>
+      <tr><td>Porta 8080 ocupada</td><td>docker ps</td><td>Veja quem usa a porta; pare esse container antes de subir outro</td></tr>
+      <tr><td>Limpar tudo que parou</td><td>docker container prune</td><td>Remove de uma vez todos os containers parados (pede confirmação)</td></tr>
+    </tbody>
+  </table>
 </div>
 
 <div class="footer">
-  Atividades elaboradas para uso em sala de aula · Docker + PowerShell<br>
-  <span>docker run --rm -it aprendizado:latest bash</span>
+  Universidade de Mogi das Cruzes · Docker via PowerShell · 3 atividades práticas<br>
+  <b>docker · nginx · ubuntu · hello-world</b>
 </div>
 
-</div><!-- /container -->
-</body>
-</html>
+</main>
+
+<script>
+(function () {
+  var ICON_COPY = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>';
+  var ICON_OK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
+
+  function fallbackCopy(text) {
+    try {
+      var ta = document.createElement('textarea');
+      ta.value = text; ta.setAttribute('readonly', '');
+      ta.style.position = 'absolute'; ta.style.left = '-9999px';
+      document.body.appendChild(ta); ta.select();
+      var ok = document.execCommand('copy');
+      document.body.removeChild(ta); return ok;
+    } catch (e) { return false; }
+  }
+  function flash(btn, label) {
+    btn.classList.add('copied');
+    btn.innerHTML = ICON_OK + (label || 'copiado');
+    setTimeout(function () { btn.classList.remove('copied'); btn.innerHTML = ICON_COPY + (btn.dataset.rest || 'copiar'); }, 1600);
+  }
+  function doCopy(text, btn, label) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () { flash(btn, label); }, function () { if (fallbackCopy(text)) flash(btn, label); });
+    } else { if (fallbackCopy(text)) flash(btn, label); }
+  }
+
+  // comandos de terminal
+  document.querySelectorAll('.cmd-line .code').forEach(function (code) {
+    var line = code.closest('.cmd-line');
+    if (!line) return;
+    var cmd = code.textContent.replace(/\s+/g, ' ').trim();
+    if (!cmd) return;
+    var btn = document.createElement('button');
+    btn.type = 'button'; btn.className = 'copy-btn'; btn.dataset.rest = 'copiar';
+    btn.setAttribute('aria-label', 'Copiar comando');
+    btn.innerHTML = ICON_COPY + 'copiar';
+    btn.addEventListener('click', function () { doCopy(cmd, btn); });
+    line.appendChild(btn);
+  });
+
+  // snippet HTML
+  document.querySelectorAll('.snip-copy').forEach(function (btn) {
+    btn.dataset.rest = 'copiar';
+    btn.addEventListener('click', function () {
+      var pre = document.getElementById('snip-' + btn.dataset.snippet);
+      if (!pre) return;
+      doCopy(pre.textContent, btn);
+    });
+  });
+})();
+</script>
