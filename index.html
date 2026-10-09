@@ -170,6 +170,34 @@
   table.tbl td { padding: 7px 12px; border-bottom: 1px solid var(--line); color: var(--ink-soft); vertical-align: top; }
   table.tbl td:first-child { font-family: 'JetBrains Mono', monospace; color: var(--ink); font-weight: 600; }
 
+  /* ── RELATÓRIO ── */
+  .relatorio { border: 1px solid var(--line-strong); border-radius: 8px; overflow: hidden; background: var(--paper-2); margin-top: 18px; }
+  .rel-hdr { background: var(--blue); color: #fff; padding: 16px 20px; }
+  :root[data-theme="dark"] .rel-hdr, :root:not([data-theme="light"]) .rel-hdr { color: var(--paper); }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .rel-hdr { color: #0f1216; } }
+  .rel-hdr h3 { font-family: 'Lora', Georgia, serif; font-size: 1.1rem; margin: 0; font-weight: 600; }
+  .rel-hdr p { margin: 2px 0 0; font-size: .82rem; opacity: .9; }
+  .rel-body { padding: 20px; }
+  .rel-ident { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 22px; }
+  @media(max-width:540px){ .rel-ident { grid-template-columns: 1fr; } }
+  .campo label { display: block; font-size: .72rem; color: var(--ink-faint); font-weight: 600; margin-bottom: 5px; }
+  .fbox { background: var(--paper); border: 1px dashed var(--line-strong); border-radius: 4px; padding: 9px 12px; font-size: .86rem; color: var(--ink-faint); font-style: italic; min-height: 34px; }
+
+  .questao { padding: 16px 0; border-top: 1px solid var(--line); }
+  .questao:first-of-type { border-top: none; }
+  .q-top { display: flex; align-items: baseline; gap: 10px; margin-bottom: 4px; }
+  .q-num { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: .85rem; color: var(--paper-2); background: var(--blue); width: 26px; height: 26px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  :root[data-theme="dark"] .q-num, :root:not([data-theme="light"]) .q-num { color: var(--paper); }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .q-num { color: #0f1216; } }
+  .q-tag { font-family: 'JetBrains Mono', monospace; font-size: .6rem; letter-spacing: .05em; text-transform: uppercase; padding: 2px 7px; border-radius: 3px; border: 1px solid var(--line-strong); color: var(--ink-faint); margin-left: auto; align-self: center; white-space: nowrap; }
+  .q-tag.a1 { color: var(--blue); border-color: var(--blue); }
+  .q-tag.a2 { color: var(--green); border-color: var(--green); }
+  .q-tag.a3 { color: var(--amber); border-color: var(--amber); }
+  .q-text { font-size: .96rem; color: var(--ink); line-height: 1.5; margin: 0 0 10px; padding-left: 36px; }
+  .q-text .mono { font-family: 'JetBrains Mono', monospace; font-size: .88em; background: var(--code-bg); border: 1px solid var(--line); border-radius: 3px; padding: 0 4px; }
+  .q-answer { margin-left: 36px; background: var(--paper); border: 1px dashed var(--line-strong); border-radius: 4px; min-height: 52px; padding: 8px 12px; font-size: .8rem; color: var(--ink-faint); font-style: italic; }
+  .q-answer.short { min-height: 34px; }
+
   /* ── FOOTER ── */
   .footer { margin-top: 52px; padding-top: 22px; text-align: center; border-top: 1px solid var(--line); font-family: 'JetBrains Mono', monospace; font-size: .72rem; color: var(--ink-faint); line-height: 1.7; }
   .footer b { color: var(--ink-soft); }
@@ -617,6 +645,95 @@ Segunda linha.</div>
       <li><span class="cbox"></span><span>Logs vistos com <span class="mono">docker logs</span></span></li>
       <li><span class="cbox"></span><span>Container parado e removido</span></li>
     </ul>
+  </div>
+</div>
+
+<!-- ═══ RELATÓRIO — 10 QUESTÕES ═══ -->
+<h2 class="block-head">Relatório — responda e entregue</h2>
+<p class="block-sub">Dez questões sobre o que você executou nas três atividades. Responda com base no que apareceu no seu terminal e no que você entendeu.</p>
+
+<div class="relatorio">
+  <div class="rel-hdr">
+    <h3>Relatório de Atividade — Docker via PowerShell</h3>
+    <p>Universidade de Mogi das Cruzes · ADS / Eng. de Software</p>
+  </div>
+  <div class="rel-body">
+
+    <div class="rel-ident">
+      <div class="campo"><label>Nome do(s) aluno(s)</label><div class="fbox">ex: João Silva</div></div>
+      <div class="campo"><label>Data</label><div class="fbox">ex: 09/10/2026</div></div>
+      <div class="campo"><label>Turma / RA</label><div class="fbox">&nbsp;</div></div>
+      <div class="campo"><label>Professor(a)</label><div class="fbox">&nbsp;</div></div>
+    </div>
+
+    <div class="questao">
+      <div class="q-top"><span class="q-num">1</span><span class="q-tag a1">Conceito</span></div>
+      <p class="q-text">Explique, com suas palavras, a diferença entre uma <b>imagem</b> e um <b>container</b>. Use a analogia da receita e do prato se ajudar.</p>
+      <div class="q-answer">Sua resposta...</div>
+    </div>
+
+    <div class="questao">
+      <div class="q-top"><span class="q-num">2</span><span class="q-tag a1">Atividade 1</span></div>
+      <p class="q-text">Ao rodar <span class="mono">docker version</span>, quais duas partes apareceram na tela e para que serve cada uma?</p>
+      <div class="q-answer">Sua resposta...</div>
+    </div>
+
+    <div class="questao">
+      <div class="q-top"><span class="q-num">3</span><span class="q-tag a1">Atividade 1</span></div>
+      <p class="q-text">Qual a diferença prática entre <span class="mono">docker ps</span> e <span class="mono">docker ps -a</span>? O que você viu de diferente ao rodar os dois?</p>
+      <div class="q-answer">Sua resposta...</div>
+    </div>
+
+    <div class="questao">
+      <div class="q-top"><span class="q-num">4</span><span class="q-tag a1">Atividade 1</span></div>
+      <p class="q-text">O que a flag <span class="mono">-d</span> faz no comando <span class="mono">docker run</span>? Por que ela foi útil ao subir o nginx?</p>
+      <div class="q-answer">Sua resposta...</div>
+    </div>
+
+    <div class="questao">
+      <div class="q-top"><span class="q-num">5</span><span class="q-tag a2">Atividade 2</span></div>
+      <p class="q-text">Depois de entrar no container Ubuntu, o início da linha do terminal mudou. De que valor para qual valor? O que essa mudança indica?</p>
+      <div class="q-answer">Sua resposta...</div>
+    </div>
+
+    <div class="questao">
+      <div class="q-top"><span class="q-num">6</span><span class="q-tag a2">Atividade 2</span></div>
+      <p class="q-text">Transcreva o que apareceu ao rodar <span class="mono">cat arquivo1.txt</span>. Qual a diferença entre os operadores <span class="mono">&gt;</span> e <span class="mono">&gt;&gt;</span> usados antes?</p>
+      <div class="q-answer">Sua resposta...</div>
+    </div>
+
+    <div class="questao">
+      <div class="q-top"><span class="q-num">7</span><span class="q-tag a2">Atividade 2</span></div>
+      <p class="q-text">Você saiu do container com <span class="mono">exit</span> e depois voltou com <span class="mono">docker start</span> + <span class="mono">docker exec</span>. Os arquivos que você tinha criado ainda estavam lá? Por quê?</p>
+      <div class="q-answer">Sua resposta...</div>
+    </div>
+
+    <div class="questao">
+      <div class="q-top"><span class="q-num">8</span><span class="q-tag a3">Atividade 3</span></div>
+      <p class="q-text">No comando que subiu o nginx, o que significa <span class="mono">-p 8080:80</span>? Qual número é a porta do seu PC e qual é a do container?</p>
+      <div class="q-answer">Sua resposta...</div>
+    </div>
+
+    <div class="questao">
+      <div class="q-top"><span class="q-num">9</span><span class="q-tag a3">Atividade 3</span></div>
+      <p class="q-text">Você editou o <span class="mono">index.html</span> e a mudança apareceu no navegador sem reiniciar o container. Que recurso do Docker tornou isso possível, e qual flag o ativou?</p>
+      <div class="q-answer">Sua resposta...</div>
+    </div>
+
+    <div class="questao">
+      <div class="q-top"><span class="q-num">10</span><span class="q-tag a3">Aplicação</span></div>
+      <p class="q-text">Em poucas linhas: o que você achou mais útil nestas atividades e como o Docker poderia ajudar num projeto real de desenvolvimento ou de uma empresa?</p>
+      <div class="q-answer">Sua resposta...</div>
+    </div>
+
+    <hr class="rule">
+    <p class="check-label" style="margin-top:0">Antes de entregar</p>
+    <ul class="checklist">
+      <li><span class="cbox"></span><span>Identificação preenchida (nome, data, turma)</span></li>
+      <li><span class="cbox"></span><span>As 10 questões respondidas com base no que você executou</span></li>
+      <li><span class="cbox"></span><span>Respostas escritas com suas próprias palavras</span></li>
+    </ul>
+
   </div>
 </div>
 
